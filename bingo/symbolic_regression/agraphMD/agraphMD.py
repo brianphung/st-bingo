@@ -52,7 +52,7 @@ import numpy as np
 
 # from .string_generation import get_formatted_string
 from ..equation import Equation
-from ...local_optimizers import continuous_local_opt
+from ...local_optimizers import continuous_local_opt_md
 from .operator_definitions import CONSTANT
 
 from .evaluation_backend import evaluation_backend
@@ -61,7 +61,7 @@ from .evaluation_backend import evaluation_backend
 LOGGER = logging.getLogger(__name__)
 
 
-class AGraphMD(Equation, continuous_local_opt.ChromosomeInterface):
+class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
     """Acyclic graph representation of an equation.
 
     `AGraph` is initialized with with empty command array and no constants.
@@ -133,6 +133,10 @@ class AGraphMD(Equation, continuous_local_opt.ChromosomeInterface):
         """The numerical constants in the equation."""
         return self._simplified_constants
 
+    @property
+    def constant_shapes(self):
+        return [np.shape(constant) for constant in self._simplified_constants]
+
     def _notify_modification(self):
         self._modified = True
         self._fitness = None
@@ -190,19 +194,20 @@ class AGraphMD(Equation, continuous_local_opt.ChromosomeInterface):
         """
         if self._modified:
             self._update()
-        return len(self._simplified_constants)
+        return len(np.array(self._simplified_constants).flatten())
 
-    def set_local_optimization_params(self, params):
-        """Set the local optimization parameters.
+    def set_local_optimization_params(self, flattened_params, shapes):  # TODO make shapes optional
+        # TODO documentation
+        constants = []
+        prev_i = 0
+        for shape in shapes:
+            len_const = shape[0] * shape[1]
+            next_i = prev_i + len_const
 
-        Manually set optimized constants.
+            constants.append(np.array(flattened_params[prev_i:next_i]).reshape(shape))
+            prev_i = next_i
 
-        Parameters
-        ----------
-        params : list of numeric
-            Values to set constants
-        """
-        self._simplified_constants = tuple(params)
+        self._simplified_constants = tuple(constants)
         self._needs_opt = False
 
     def get_utilized_commands(self):
