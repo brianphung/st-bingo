@@ -162,8 +162,12 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
                 and num_const == len(self._simplified_constants):
             self._simplified_constants = self._simplified_constants[:num_const]
         else:
-            for const_command in self._simplified_command_array[const_commands]:
-                self._simplified_constants.append(np.ones((const_command[2:])))
+            for const_command in self._simplified_command_array[const_commands]:  # TODO deal with duplicated constant commands
+                dim = tuple(const_command[2:])
+                if tuple(dim) == (0, 0):
+                    self._simplified_constants.append(1.0)
+                else:
+                    self._simplified_constants.append(np.ones(dim))
             if num_const > 0:
                 self._needs_opt = True
         self._modified = False
@@ -201,7 +205,10 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         constants = []
         prev_i = 0
         for shape in shapes:
-            len_const = shape[0] * shape[1]
+            if shape == ():
+                len_const = 1
+            else:
+                len_const = shape[0] * shape[1]
             next_i = prev_i + len_const
 
             constants.append(np.array(flattened_params[prev_i:next_i]).reshape(shape))
