@@ -33,7 +33,7 @@ def _integer_reverse_eval(_reverseindex, _param1, _param2, _forwardeval,
 
 # Load x column
 def _loadx_forward_eval(param1, _param2, x, _constants, _forwardeval):
-    return x[param1]  # TODO need to figure out multi-xs better
+    return x[:, param1]
 
 
 def _loadx_reverse_eval(_reverseindex, _param1, _param2, _forwardeval,

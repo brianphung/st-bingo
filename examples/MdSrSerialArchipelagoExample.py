@@ -21,28 +21,22 @@ POP_SIZE = 100
 STACK_SIZE = 4
 
 
-def init_x_vals(start, stop, num_points):
-    return np.array([np.linspace(start, stop, num_points).reshape([3, -1])])
-
-
 def equation_eval(x):
     mu = 2.0
     alpha = 1.5
     C = np.array([[2.0 * mu + alpha, alpha, 0.0],
                   [alpha, 2.0 * mu + alpha, 0.0],
                   [0.0, 0.0, mu]])
-    return C @ x
+    return x[:, 0] @ C
 
 
 def execute_generational_steps():
-    np.random.seed(8)
-    x = init_x_vals(-10, 10, 3)
+    x = np.linspace(-10, 11, 60).reshape((-1, 1, 1, 3))
     y = equation_eval(x)
     training_data = ExplicitTrainingDataMD(x, y)
 
-    component_generator = ComponentGeneratorMD(x[0].shape)
+    component_generator = ComponentGeneratorMD([np.shape(_x) for _x in x[0]])
     component_generator.add_operator("+")
-    component_generator.add_operator("-")
     component_generator.add_operator("*")
 
     crossover = AGraphCrossover()
@@ -61,16 +55,13 @@ def execute_generational_steps():
 
     opt_result = archipelago.evolve_until_convergence(max_generations=500,
                                                       fitness_threshold=1.0e-4)
-    if opt_result.success:
-        best_indiv = archipelago.get_best_individual()
-        print(best_indiv.get_formatted_string("console"))
-        print(best_indiv.command_array)
-        print(best_indiv.constants)
-        print(best_indiv.fitness)
-    else:
-        print("Failed.")
 
-    print(opt_result.ea_diagnostics)
+    print(opt_result)
+    best_indiv = archipelago.get_best_individual()
+    print(best_indiv.get_formatted_string("console"))
+    print(best_indiv.command_array)
+    print(best_indiv.constants)
+    print(best_indiv.fitness)
 
 
 def main():

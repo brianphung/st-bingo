@@ -37,12 +37,11 @@ class ComponentGeneratorMD:
     @argument_validation(num_initial_load_statements={">=": 1},
                          terminal_probability={">=": 0.0, "<=": 1.0},
                          constant_probability={">=": 0.0, "<=": 1.0})
-    def __init__(self, input_x_shape, num_initial_load_statements=1,
+    def __init__(self, input_x_dimensions, num_initial_load_statements=1,
                  terminal_probability=0.1,
                  constant_probability=None):
-        self.num_x = 1
-
-        self.input_x_dimension = input_x_shape
+        self.input_x_dimensions = np.array(input_x_dimensions)
+        self.num_x = len(input_x_dimensions)
         self._num_initial_load_statements = num_initial_load_statements
 
         self._terminal_pmf = self._make_terminal_pdf(constant_probability)
@@ -173,15 +172,15 @@ class ComponentGeneratorMD:
 
         """
         terminal = self.random_terminal()
+        param = self.random_terminal_parameter(terminal)
         if terminal == VARIABLE:
-            dim1, dim2 = self.input_x_dimension
+            dim1, dim2 = self.input_x_dimensions[param]
         else:
             dim1, dim2 = self.random_dims()
-        param = self.random_terminal_parameter(terminal)
         return np.array([terminal, param, dim1, dim2], dtype=int)
 
     def random_dims(self):
-        max_dim = max(self.input_x_dimension)
+        max_dim = max(self.input_x_dimensions.flatten())
         dim1 = np.random.randint(0, max_dim + 1)
         if dim1 == 0:
             dim2 = 0
