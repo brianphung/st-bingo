@@ -153,6 +153,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
 
         const_commands = self._simplified_command_array[:, 0] == CONSTANT
         num_const = np.count_nonzero(const_commands)
+        self._simplified_command_array[const_commands, 1] = np.arange(num_const)
 
         optimization_aggression = 0
         if optimization_aggression == 0 \
@@ -198,7 +199,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         """
         if self._modified:
             self._update()
-        return len(np.array(self._simplified_constants).flatten())
+        return sum([len(np.array(constant).flatten()) for constant in self._simplified_constants])
 
     def set_local_optimization_params(self, flattened_params, shapes):  # TODO make shapes optional
         # TODO documentation
@@ -258,6 +259,9 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         except (ArithmeticError, OverflowError, ValueError,
                 FloatingPointError) as err:
             LOGGER.warning("%s in stack evaluation", err)
+            f_of_x = \
+                evaluation_backend.evaluate(self._simplified_command_array[:, :-1], x,
+                                            self._simplified_constants)
             return np.full(x.shape, np.nan)
 
     def evaluate_equation_with_x_gradient_at(self, x):

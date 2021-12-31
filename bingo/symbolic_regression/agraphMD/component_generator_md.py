@@ -186,7 +186,7 @@ class ComponentGeneratorMD:
         if dim1 == 0:
             dim2 = 0
         else:
-            dim2 = np.random.randint(0, max_dim + 1)
+            dim2 = np.random.randint(1, max_dim + 1)
         return dim1, dim2
 
     def random_terminal(self):
