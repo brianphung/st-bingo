@@ -50,13 +50,12 @@ Node      Name                                     Math
 import logging
 import numpy as np
 
-# from .string_generation import get_formatted_string
+from .string_generation_md import get_formatted_string
+from .simplification_backend import simplification_backend
 from ..equation import Equation
 from ...local_optimizers import continuous_local_opt_md
 from .operator_definitions import CONSTANT
-
 from .evaluation_backend import evaluation_backend
-# from .simplification_backend import simplification_backend
 
 LOGGER = logging.getLogger(__name__)
 
@@ -82,8 +81,10 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
     constants : tuple of numeric
         numeric constants that are used in the equation
     """
-    def __init__(self, use_simplification=False):
+    def __init__(self, output_dim, use_simplification=False):
         super().__init__()
+
+        self._output_dim = output_dim
 
         self._use_simplification = use_simplification
 
@@ -99,6 +100,10 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
     def engine(self):
         """Identification of the code location"""
         return "Python"
+
+    @property
+    def output_dim(self):
+        return self._output_dim
 
     @property
     def command_array(self):
@@ -164,6 +169,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
                 and num_const == len(self._simplified_constants):
             self._simplified_constants = self._simplified_constants[:num_const]
         else:
+            self._simplified_constants = []
             for const_command in self._simplified_command_array[const_commands]:  # TODO deal with duplicated constant commands
                 dim = tuple(const_command[2:])
                 if tuple(dim) == (0, 0):
@@ -172,6 +178,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
                     self._simplified_constants.append(np.ones(dim))
             if num_const > 0:
                 self._needs_opt = True
+            self._simplified_constants = tuple(self._simplified_constants)
         self._modified = False
 
     def needs_local_optimization(self):
@@ -231,9 +238,8 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         list of bool of length N
             Boolean values for whether each command is utilized.
         """
-        # return simplification_backend.get_utilized_commands(
-        #     self._command_array)
-        raise NotImplementedError
+        return simplification_backend.get_utilized_commands(
+            self._command_array[:, :-1])
 
     def evaluate_equation_at(self, x):
         """Evaluate the `AGraph` equation.
@@ -352,7 +358,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         str :
             Equation in specified form
         """
-        return "Not Implemented!"
+        return get_formatted_string(format_, self._simplified_command_array[:, :-1], tuple())
         # if raw:
         #     return get_formatted_string(format_, self._command_array, tuple())
         # if self._modified:
@@ -391,7 +397,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         return dist
 
     def __deepcopy__(self, memodict=None):
-        duplicate = AGraphMD()
+        duplicate = AGraphMD(self._output_dim)
         self._copy_agraph_values_to_new_graph(duplicate)
         return duplicate
 
@@ -407,4 +413,5 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
             tuple(self._simplified_constants)
         agraph_duplicate._needs_opt = self._needs_opt
         agraph_duplicate._modified = self._modified
+        agraph_duplicate._output_dim = self._output_dim
         agraph_duplicate._use_simplification = self._use_simplification

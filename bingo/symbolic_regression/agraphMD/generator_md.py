@@ -44,7 +44,7 @@ class AGraphGeneratorMD(Generator):
         return individual
 
     def _python_generator_function(self):
-        return AGraphMD(use_simplification=self._use_simplification)
+        return AGraphMD(output_dim=self._output_dim, use_simplification=self._use_simplification)
 
     def _create_command_array(self):
         attempts = 0

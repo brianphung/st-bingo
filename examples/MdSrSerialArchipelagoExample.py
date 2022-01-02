@@ -9,12 +9,11 @@ from bingo.evolutionary_optimizers.serial_archipelago import SerialArchipelago
 from bingo.evaluation.evaluation import Evaluation
 from bingo.evolutionary_optimizers.island import Island
 
-from bingo.symbolic_regression import AGraphCrossover, \
-                                      AGraphMutation
-
 from bingo.local_optimizers.continuous_local_opt_md import ContinuousLocalOptimizationMD
+from bingo.symbolic_regression import AGraphCrossover
 from bingo.symbolic_regression.agraphMD.component_generator_md import ComponentGeneratorMD
 from bingo.symbolic_regression.agraphMD.generator_md import AGraphGeneratorMD
+from bingo.symbolic_regression.agraphMD.mutation_md import AGraphMutationMD
 from bingo.symbolic_regression.explicit_regression_md import ExplicitTrainingDataMD, ExplicitRegressionMD
 
 POP_SIZE = 100
@@ -27,7 +26,7 @@ def equation_eval(x):
     C = np.array([[2.0 * mu + alpha, alpha, 0.0],
                   [alpha, 2.0 * mu + alpha, 0.0],
                   [0.0, 0.0, mu]])
-    return x[:, 0] @ C
+    return x[:, 0] @ C + x[:, 0] @ (2.0 * C)
 
 
 def execute_generational_steps():
@@ -40,15 +39,16 @@ def execute_generational_steps():
     component_generator.add_operator("*")
 
     crossover = AGraphCrossover()
-    mutation = AGraphMutation(component_generator)
+    mutation = AGraphMutationMD(component_generator, command_probability=0.333, node_probability=0.333,
+                                parameter_probability=0.333, prune_probability=0.0, fork_probability=0.0)
     agraph_generator = AGraphGeneratorMD(STACK_SIZE, component_generator, y[0].shape, use_simplification=False)
 
     fitness = ExplicitRegressionMD(training_data=training_data)
-    local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='BFGS')
+    local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='BFGS', param_init_bounds=[0, 0])
     evaluator = Evaluation(local_opt_fitness)
 
     ea = AgeFitnessEA(evaluator, agraph_generator, crossover,
-                      mutation, 0.0, 0.0, POP_SIZE)
+                      mutation, 0.0, 0.2, POP_SIZE)
 
     island = Island(ea, agraph_generator, POP_SIZE)
     archipelago = SerialArchipelago(island)
