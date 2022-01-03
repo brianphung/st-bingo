@@ -7,14 +7,15 @@ from bingo.symbolic_regression.agraphMD.validation_backend.validation_backend im
 
 @pytest.fixture
 def complex_stack():
-    return np.array([[VARIABLE, 0, 3, 1],
-                     [CONSTANT, 0, 1, 3],
-                     [MULTIPLICATION, 0, 1, 0],
-                     [CONSTANT, 1, 0, 0],
-                     [MULTIPLICATION, 2, 3, 0],
-                     [CONSTANT, 2, 3, 3],
-                     [ADDITION, 4, 5, 0],
-                     [SUBTRACTION, 4, 6, 0]], dtype=int)
+    return np.array([[VARIABLE, 0, 3, 1],        # 0, 3x1
+                     [CONSTANT, 0, 3, 1],        # 1, 3x1
+                     [TRANSPOSE, 1, 1, 0],       # 2, 1x3
+                     [MULTIPLICATION, 0, 2, 0],  # 3, 3x3
+                     [CONSTANT, 1, 0, 0],        # 4, 0x0
+                     [MULTIPLICATION, 3, 4, 0],  # 5, 3x3
+                     [CONSTANT, 2, 3, 3],        # 6, 3x3
+                     [ADDITION, 5, 6, 0],        # 7, 3x3
+                     [SUBTRACTION, 5, 7, 0]], dtype=int)  # 8, 3x3
 
 
 @pytest.mark.parametrize("node", [ADDITION, SUBTRACTION])
@@ -56,6 +57,13 @@ def test_validate_multiplication_invalid():
                       [CONSTANT, 0, 2, 1],
                       [MULTIPLICATION, 0, 1, 0]], dtype=int)
     assert validate(stack, (1, 1)) is False
+
+
+@pytest.mark.parametrize("op_dims", [(2, 3), (0, 0)])
+def test_validate_transpose_valid(op_dims):
+    stack = np.array([[CONSTANT, 0, *op_dims],
+                      [TRANSPOSE, 0, 0, 0]], dtype=int)
+    assert validate(stack, (op_dims[1], op_dims[0])) is True
 
 
 def test_validate_complex(complex_stack):

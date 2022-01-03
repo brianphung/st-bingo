@@ -27,6 +27,7 @@ SQRT = 12
 SAFE_POWER = 13
 SINH = 14
 COSH = 15
+TRANSPOSE = 16
 
 IS_ARITY_2_MAP = {INTEGER: False,
                   VARIABLE: False,
@@ -44,7 +45,8 @@ IS_ARITY_2_MAP = {INTEGER: False,
                   POWER: True,
                   ABS: False,
                   SQRT: False,
-                  SAFE_POWER: True}
+                  SAFE_POWER: True,
+                  TRANSPOSE: False}
 IS_TERMINAL_MAP = {INTEGER: True,
                    VARIABLE: True,
                    CONSTANT: True,
@@ -61,10 +63,12 @@ IS_TERMINAL_MAP = {INTEGER: True,
                    POWER: False,
                    ABS: False,
                    SQRT: False,
-                   SAFE_POWER: False}
+                   SAFE_POWER: False,
+                   TRANSPOSE: False}
 OPERATOR_NAMES = {INTEGER: ["integer"],
                   VARIABLE: ["load", "x"],
                   CONSTANT: ["constant", "c"],
                   ADDITION: ["add", "addition", "+"],
                   SUBTRACTION: ["subtract", "subtraction", "-"],
-                  MULTIPLICATION: ["multiply", "multiplication", "*"]}
+                  MULTIPLICATION: ["multiply", "multiplication", "*"],
+                  TRANSPOSE: ["transpose", "T"]}

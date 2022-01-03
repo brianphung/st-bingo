@@ -36,6 +36,10 @@ def _multiply_validate(param1, param2, param3, dimensions):
         return False, (0, 0)
 
 
+def _transpose_validate(param1, param2, param3, dimensions):
+    return param1 >= 0, (dimensions[param1][1], dimensions[param1][0])
+
+
 def _not_implemented_validate(param1, param2, param3, dimensions):
     return False, (-1, -1)
 
@@ -56,5 +60,6 @@ VALIDATE_MAP = {INTEGER: _integer_validate,
                 POWER: _not_implemented_validate,
                 ABS: _not_implemented_validate,
                 SQRT: _not_implemented_validate,
-                SAFE_POWER: _not_implemented_validate}
+                SAFE_POWER: _not_implemented_validate,
+                TRANSPOSE: _transpose_validate}
 # TODO dot product, another operator???

@@ -74,3 +74,15 @@ def test_multiplication_validate_valid_multi_dim_multi_dim():
 def test_multiplication_validate_invalid():
     dimensions = [(1, 2), (3, 1)]
     assert validate_operator(MULTIPLICATION, 0, 1, 1, dimensions)[0] is False
+
+
+@pytest.mark.parametrize("transpose_cmd, expected_dim",
+                         [[[TRANSPOSE, 0, 1, -2], (2, 1)],
+                          [[TRANSPOSE, 1, -1, 5], (0, 0)]])
+def test_transpose_validate_valid(transpose_cmd, expected_dim):
+    dimensions = [(1, 2), (0, 0)]  # TODO can we do transpose on a scalar?
+    assert validate_operator(*transpose_cmd, dimensions) == (True, expected_dim)
+
+
+def test_transpose_validate_invalid():
+    assert validate_operator(TRANSPOSE, -1, 0, 0, [])[0] is False

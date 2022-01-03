@@ -12,10 +12,10 @@ REVERSE_EVAL_MAP : dictionary {int: function}
 
 import numpy as np
 
-from bingo.symbolic_regression.agraph.operator_definitions \
+from bingo.symbolic_regression.agraphMD.operator_definitions \
     import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, \
            DIVISION, SIN, COS, SINH, COSH, EXPONENTIAL, LOGARITHM, POWER, ABS, \
-           SQRT, SAFE_POWER
+           SQRT, SAFE_POWER, TRANSPOSE
 
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -217,6 +217,10 @@ def _sqrt_reverse_eval(reverse_index, param1, _param2, forward_eval,
                             np.sign(forward_eval[param1])
 
 
+def _transpose_forward_eval(param1, _param2, _x, _constants, forward_eval):
+    return np.transpose(forward_eval[param1])
+
+
 def forward_eval_function(node, param1, param2, x, constants, forward_eval):
     """Performs calculation of one line of stack"""
     return FORWARD_EVAL_MAP[node](param1, param2, x, constants, forward_eval)
@@ -246,7 +250,8 @@ FORWARD_EVAL_MAP = {INTEGER: _integer_forward_eval,
                     POWER: _pow_forward_eval,
                     ABS: _abs_forward_eval,
                     SQRT: _sqrt_forward_eval,
-                    SAFE_POWER: _safe_pow_forward_eval}
+                    SAFE_POWER: _safe_pow_forward_eval,
+                    TRANSPOSE: _transpose_forward_eval}
 
 REVERSE_EVAL_MAP = {INTEGER: _integer_reverse_eval,
                     VARIABLE: _loadx_reverse_eval,
