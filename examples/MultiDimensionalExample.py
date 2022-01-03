@@ -10,16 +10,15 @@ if __name__ == '__main__':
     C = np.array([[1, 2, 3],
                   [4, 5, 6],
                   [7, 8, 9]])
-    x = np.array([[[0], [1], [2]]])
-    # x = np.array([[list(range(0, 100, 3)), list(range(1, 101, 3)), list(range(2, 102, 3))]])
-    y = C @ x
+    x = np.array([[[[0], [1], [2]]]])
+    y = C @ x[:, 0]
     print(y)
 
     etd = ExplicitTrainingDataMD(x, y)
     fitness = ExplicitRegressionMD(etd, metric="mse")
     clo = ContinuousLocalOptimizationMD(fitness, algorithm="BFGS", param_init_bounds=[0, 0])
 
-    test_graph = AGraphMD()
+    test_graph = AGraphMD(output_dim=y.shape)
     test_graph.command_array = np.array([[CONSTANT, 0, 3, 3],
                                          [VARIABLE, 0, 3, 1],
                                          [MULTIPLICATION, 0, 1, 0]], dtype=int)

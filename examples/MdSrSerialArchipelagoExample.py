@@ -10,8 +10,8 @@ from bingo.evaluation.evaluation import Evaluation
 from bingo.evolutionary_optimizers.island import Island
 
 from bingo.local_optimizers.continuous_local_opt_md import ContinuousLocalOptimizationMD
-from bingo.symbolic_regression import AGraphCrossover
 from bingo.symbolic_regression.agraphMD.component_generator_md import ComponentGeneratorMD
+from bingo.symbolic_regression.agraphMD.crossover_md import AGraphCrossoverMD
 from bingo.symbolic_regression.agraphMD.generator_md import AGraphGeneratorMD
 from bingo.symbolic_regression.agraphMD.mutation_md import AGraphMutationMD
 from bingo.symbolic_regression.explicit_regression_md import ExplicitTrainingDataMD, ExplicitRegressionMD
@@ -38,17 +38,17 @@ def execute_generational_steps():
     component_generator.add_operator("+")
     component_generator.add_operator("*")
 
-    crossover = AGraphCrossover()
+    crossover = AGraphCrossoverMD()
     mutation = AGraphMutationMD(component_generator, command_probability=0.333, node_probability=0.333,
                                 parameter_probability=0.333, prune_probability=0.0, fork_probability=0.0)
     agraph_generator = AGraphGeneratorMD(STACK_SIZE, component_generator, y[0].shape, use_simplification=False)
 
     fitness = ExplicitRegressionMD(training_data=training_data)
-    local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='BFGS', param_init_bounds=[0, 0])
+    local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='lm', param_init_bounds=[0, 0])
     evaluator = Evaluation(local_opt_fitness)
 
     ea = AgeFitnessEA(evaluator, agraph_generator, crossover,
-                      mutation, 0.0, 0.2, POP_SIZE)
+                      mutation, 0.2, 0.2, POP_SIZE)
 
     island = Island(ea, agraph_generator, POP_SIZE)
     archipelago = SerialArchipelago(island)
