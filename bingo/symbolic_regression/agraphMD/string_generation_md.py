@@ -10,10 +10,10 @@ SYMPY_PRINT_MAP : dict {int: str}
 CONSOLE_PRINT_MAP : dict {int: str}
                   A map of node number to a format string for console output
 """
-from bingo.symbolic_regression.agraph.operator_definitions \
+from bingo.symbolic_regression.agraphMD.operator_definitions \
     import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, \
            DIVISION, SIN, COS, SINH, COSH, EXPONENTIAL, LOGARITHM, POWER, ABS, \
-           SQRT, SAFE_POWER
+           SQRT, SAFE_POWER, TRANSPOSE
 
 STACK_PRINT_MAP = {ADDITION: "({}) + ({})",
                    SUBTRACTION: "({}) - ({})",
@@ -28,7 +28,8 @@ STACK_PRINT_MAP = {ADDITION: "({}) + ({})",
                    POWER: "({}) ^ ({})",
                    ABS: "abs ({})",
                    SQRT: "sqrt ({})",
-                   SAFE_POWER: "(|{}|) ^ ({})"}
+                   SAFE_POWER: "(|{}|) ^ ({})",
+                   TRANSPOSE: "{}T"}
 LATEX_PRINT_MAP = {ADDITION: "{} + {}",
                    SUBTRACTION: "{} - ({})",
                    MULTIPLICATION: "({})({})",
@@ -42,7 +43,8 @@ LATEX_PRINT_MAP = {ADDITION: "{} + {}",
                    POWER: "({})^{{ ({}) }}",
                    ABS: "|{}|",
                    SQRT: "\\sqrt{{ {} }}",
-                   SAFE_POWER: "(|{}|)^{{ ({}) }}"}
+                   SAFE_POWER: "(|{}|)^{{ ({}) }}",
+                   TRANSPOSE: "{}^T"}
 SYMPY_PRINT_MAP = {ADDITION: "{} + {}",
                    SUBTRACTION: "{} - ({})",
                    MULTIPLICATION: "({})*({})",
@@ -56,7 +58,8 @@ SYMPY_PRINT_MAP = {ADDITION: "{} + {}",
                    POWER: "({})**({})",
                    ABS: "abs({})",
                    SQRT: "sqrt({})",
-                   SAFE_POWER: "abs({})**({})"}
+                   SAFE_POWER: "abs({})**({})",
+                   TRANSPOSE: "{}^T"}
 CONSOLE_PRINT_MAP = {ADDITION: "{} + {}",
                      SUBTRACTION: "{} - ({})",
                      MULTIPLICATION: "({})({})",
@@ -70,8 +73,8 @@ CONSOLE_PRINT_MAP = {ADDITION: "{} + {}",
                      POWER: "({})^({})",
                      ABS: "|{}|",
                      SQRT: "sqrt({})",
-                     SAFE_POWER: "(|{}|)^({})"}
-
+                     SAFE_POWER: "(|{}|)^({})",
+                     TRANSPOSE: "{}^T"}
 
 def get_formatted_string(eq_format, command_array, constants):
     """ Builds a formatted string from command array and constants
