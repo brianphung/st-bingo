@@ -261,7 +261,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
             self._update()
         try:
             f_of_x = \
-                evaluation_backend.evaluate(self._simplified_command_array[:, :-1], x,
+                evaluation_backend.evaluate(self._simplified_command_array, x,
                                             self._simplified_constants)
             return f_of_x
         except (ArithmeticError, OverflowError, ValueError,
@@ -358,13 +358,12 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         str :
             Equation in specified form
         """
-        return get_formatted_string(format_, self._simplified_command_array[:, :-1], tuple())
-        # if raw:
-        #     return get_formatted_string(format_, self._command_array, tuple())
-        # if self._modified:
-        #     self._update()
-        # return get_formatted_string(format_, self._simplified_command_array,
-        #                             self._simplified_constants)
+        if raw:
+            return get_formatted_string(format_, self._command_array[:, :-1], tuple())
+        if self._modified:
+            self._update()
+        return get_formatted_string(format_, self._simplified_command_array[:, :-1],
+                                    self._simplified_constants)
 
     def get_complexity(self):
         """Calculate complexity of agraph equation.

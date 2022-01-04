@@ -33,7 +33,10 @@ def _integer_reverse_eval(_reverseindex, _param1, _param2, _forwardeval,
 
 # Load x column
 def _loadx_forward_eval(param1, _param2, x, _constants, _forwardeval):
-    return x[:, param1]
+    if isinstance(x, list):  # TODO need a test for this behavior
+        return np.array([row[param1] for row in x])
+    else:
+        return x[:, param1]
 
 
 def _loadx_reverse_eval(_reverseindex, _param1, _param2, _forwardeval,
@@ -218,7 +221,10 @@ def _sqrt_reverse_eval(reverse_index, param1, _param2, forward_eval,
 
 
 def _transpose_forward_eval(param1, _param2, _x, _constants, forward_eval):
-    return np.transpose(forward_eval[param1])
+    if len(np.shape(forward_eval[param1])) == 3:
+        return np.transpose(forward_eval[param1], (0, 2, 1))  # TODO not clean
+    else:
+        return np.transpose(forward_eval[param1])
 
 
 def forward_eval_function(node, param1, param2, x, constants, forward_eval):

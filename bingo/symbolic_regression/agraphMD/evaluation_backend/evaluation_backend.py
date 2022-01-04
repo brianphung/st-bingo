@@ -66,9 +66,8 @@ def evaluate_with_derivative(stack, x, constants, wrt_param_x_or_c):
 
 def _forward_eval(stack, x, constants):
     forward_eval = []
-    for i, (node, param1, param2) in enumerate(stack):
-        forward_eval.append(forward_eval_function(node, param1, param2, x,
-                                                constants, forward_eval))
+    for i, (node, param1, param2, param3) in enumerate(stack):
+        forward_eval.append(forward_eval_function(node, param1, param2, x, constants, forward_eval))
     return forward_eval
 
 
