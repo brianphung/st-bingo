@@ -85,4 +85,4 @@ def test_transpose_validate_valid(transpose_cmd, expected_dim):
 
 
 def test_transpose_validate_invalid():
-    assert validate_operator(TRANSPOSE, -1, 0, 0, [])[0] is False
+    assert validate_operator(TRANSPOSE, -1, 0, 0, [(0, 0)])[0] is False
