@@ -81,16 +81,6 @@ class ExplicitTrainingDataMD(TrainingData):
         dependent variable
     """
     def __init__(self, x, y):
-        if x.ndim == 1:
-            # warnings.warn("Explicit training x should be 2 dim array, " +
-            #               "reshaping array")
-            x = x.reshape([-1, 1])
-
-        if y.ndim == 1:
-            # warnings.warn("Explicit training y should be 2 dim array, " +
-            #               "reshaping array")
-            y = y.reshape([-1, 1])
-
         self._x = x
         self._y = y
 

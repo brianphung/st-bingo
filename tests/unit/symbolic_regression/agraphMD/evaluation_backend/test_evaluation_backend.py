@@ -36,15 +36,9 @@ def multi_var_command_array():
 
 @pytest.fixture
 def sample_x():
-    # TODO shouldn't be this hard to make [x_0 : x_1],
-    #   reconsider how to store multiple variables
     x_0 = np.linspace(-1.0, 0.0, 3*2*3).reshape((-1, 2, 3))
     x_1 = np.linspace(0.0, 1.0, 3*4*3).reshape((-1, 4, 3))
-    combined = []
-    # have to do for loop since stack doesn't work with mismatched arrays
-    for i in range(len(x_0)):
-        combined.append([x_0[i], x_1[i]])
-    return combined  # combined[:, i] = x_i
+    return [x_0, x_1]  # combined[:, i] = x_i
 
 
 @pytest.fixture
@@ -58,19 +52,16 @@ def sample_constants():
 
 
 def test_all_funcs_eval(sample_x, sample_constants, all_funcs_command_array):
-    x_0 = np.array([row[0] for row in sample_x])
     fives = 5.0 * np.ones((3, 2))
-    expected_f_of_x = (sample_constants[0].T - (x_0 + fives.T)) @ np.transpose(x_0, (0, 2, 1))
+    expected_f_of_x = (sample_constants[0].T - (sample_x[0] + fives.T)) @ np.transpose(sample_x[0], (0, 2, 1))
     f_of_x = evaluation_backend.evaluate(all_funcs_command_array,
                                          sample_x, sample_constants)
     np.testing.assert_array_almost_equal(f_of_x, expected_f_of_x)
 
 
 def test_higher_dim_func_eval(sample_x, sample_constants, multi_var_command_array):
-    x_0 = np.array([row[0] for row in sample_x])
-    x_1 = np.array([row[1] for row in sample_x])
     c_0, c_1 = sample_constants
-    expected_f_of_x = c_0 @ x_0 + c_1 @ x_1
+    expected_f_of_x = c_0 @ sample_x[0] + c_1 @ sample_x[1]
     f_of_x = evaluation_backend.evaluate(multi_var_command_array,
                                          sample_x, sample_constants)
     np.testing.assert_array_almost_equal(f_of_x, expected_f_of_x)

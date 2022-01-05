@@ -4,9 +4,7 @@ evaluation.  This backend is used to perform the the evaluation of the equation
 represented by an `AGraph`.  It can also perform derivatives.
 """
 
-import numpy as np
-
-from .operator_eval import forward_eval_function, reverse_eval_function
+from .operator_eval import forward_eval_function
 
 ENGINE = "Python"
 
@@ -67,7 +65,7 @@ def evaluate_with_derivative(stack, x, constants, wrt_param_x_or_c):
 def _forward_eval(stack, x, constants):
     forward_eval = []
     for i, (node, param1, param2, param3) in enumerate(stack):
-        forward_eval.append(forward_eval_function(node, param1, param2, x, constants, forward_eval))
+        forward_eval.append(forward_eval_function(node, param1, param2, param3, x, constants, forward_eval))
     return forward_eval
 
 
@@ -89,14 +87,15 @@ def _evaluate_with_derivative(stack, x, constants, wrt_param_x_or_c):
 
 
 def _reverse_eval(deriv_shape, deriv_wrt_node, forward_eval, stack):
-    derivative = np.zeros(deriv_shape)
-    reverse_eval = [0] * stack.shape[0]
-    reverse_eval[-1] = 1.0
-    for i in range(stack.shape[0] - 1, -1, -1):
-        node, param1, param2 = stack[i]
-        if node == deriv_wrt_node:
-            derivative[:, param1] += reverse_eval[i]
-        else:
-            reverse_eval_function(node, i, param1, param2, forward_eval,
-                                  reverse_eval)
-    return derivative
+    raise NotImplementedError
+    # derivative = np.zeros(deriv_shape)
+    # reverse_eval = [0] * stack.shape[0]
+    # reverse_eval[-1] = 1.0
+    # for i in range(stack.shape[0] - 1, -1, -1):
+    #     node, param1, param2 = stack[i]
+    #     if node == deriv_wrt_node:
+    #         derivative[:, param1] += reverse_eval[i]
+    #     else:
+    #         reverse_eval_function(node, i, param1, param2, forward_eval,
+    #                               reverse_eval)
+    # return derivative
