@@ -14,31 +14,30 @@ class _IntegerValidate(_ValidateBase):
         return param2 >= 0 and param3 >= 0, (param2, param3)
 
 
-class _LoadValidate(_ValidateBase):
+class _LoadVariableValidate(_ValidateBase):
     @staticmethod
     def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
-        raise NotImplementedError
-
-    @staticmethod
-    def validate(param1, param2, param3, shapes):
         dims_from_command = (param2, param3)
-        if param1 < -1:
+        if param1 < 0:
             return False, dims_from_command
-        else:
+        try:
             return param2 >= 0 and param3 >= 0 and \
-                   shapes[param1] == dims_from_command, dims_from_command
-
-
-class _LoadVariableValidate(_LoadValidate):
-    @staticmethod
-    def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
-        return _LoadValidate.validate(param1, param2, param3, x_dims)
+                   x_dims[param1] == dims_from_command, dims_from_command
+        except IndexError:
+            return False, dims_from_command
 
 
 class _LoadConstantValidate(_ValidateBase):
     @staticmethod
     def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
-        return _LoadValidate.validate(param1, param2, param3, constant_dims)
+        dims_from_command = (param2, param3)
+        if param1 < -1:
+            return False, dims_from_command
+        try:
+            return param2 >= 0 and param3 >= 0 and \
+                   constant_dims[param1] == dims_from_command, dims_from_command
+        except IndexError:
+            return False, dims_from_command
 
 
 class _AdditionLikeValidate(_ValidateBase):

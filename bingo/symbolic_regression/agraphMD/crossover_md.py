@@ -5,7 +5,7 @@ acyclic graph individuals.
 """
 import numpy as np
 
-from .validation_backend.validation_backend import validate
+from .validation_backend.validation_backend import validate_individual
 from ...chromosomes.crossover import Crossover
 
 
@@ -29,13 +29,12 @@ class AGraphCrossoverMD(Crossover):
             The two children from the crossover.
         """
         attempts = 0
-        child_1, child_2 = self._single_point_crossover(parent_1, parent_2)
-        while attempts == 0 or not validate(child_1.command_array, child_1.output_dim)\
-                or not validate(child_2.command_array, child_2.output_dim):
+        while attempts == 0 or not validate_individual(child_1) or not validate_individual(child_2):
             if attempts >= 100:
                 print("crossover failed")  # TODO turn into warning
                 return parent_1.copy(), parent_2.copy()
             child_1, child_2 = self._single_point_crossover(parent_1, parent_2)
+            child_1._update(), child_2._update()  # TODO testing for this
             attempts += 1
         return child_1, child_2
 

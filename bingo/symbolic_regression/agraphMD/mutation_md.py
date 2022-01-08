@@ -10,7 +10,7 @@ import numpy as np
 
 from .operator_definitions import IS_ARITY_2_MAP, IS_TERMINAL_MAP, \
     CONSTANT, VARIABLE, INTEGER
-from .validation_backend.validation_backend import validate
+from .validation_backend.validation_backend import validate_individual
 from ...chromosomes.mutation import Mutation
 from ...util.argument_validation import argument_validation
 from ...util.probability_mass_function import ProbabilityMassFunction
@@ -99,13 +99,14 @@ class AGraphMutationMD(Mutation):
         child = parent.copy()
         mutation_algorithm = self._mutation_function_pmf.draw_sample()
         attempts = 0
-        while attempts == 0 or not validate(child.command_array, child.output_dim):
+        while attempts == 0 or not validate_individual(child):
             if attempts >= 100:
                 print("mutation failed")  # TODO turn into warning
                 # TODO reset last mutation location and last mutation type
                 return parent.copy()
             child = parent.copy()
             mutation_algorithm(child)
+            child._update()  # TODO testing for this
             attempts += 1
         return child
 

@@ -81,10 +81,11 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
     constants : tuple of numeric
         numeric constants that are used in the equation
     """
-    def __init__(self, output_dim, use_simplification=False):
+    def __init__(self, input_dims, output_dim, use_simplification=False):
         super().__init__()
 
-        self._output_dim = output_dim
+        self.input_dims = input_dims
+        self.output_dim = output_dim
 
         self._use_simplification = use_simplification
 
@@ -100,10 +101,6 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
     def engine(self):
         """Identification of the code location"""
         return "Python"
-
-    @property
-    def output_dim(self):
-        return self._output_dim
 
     @property
     def command_array(self):
@@ -395,8 +392,8 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         dist = np.sum(self.command_array != chromosome.command_array)
         return dist
 
-    def __deepcopy__(self, memodict=None):
-        duplicate = AGraphMD(self._output_dim)
+    def __deepcopy__(self, memodict=None):  # TODO test
+        duplicate = AGraphMD(self.input_dims, self.output_dim)
         self._copy_agraph_values_to_new_graph(duplicate)
         return duplicate
 
@@ -412,5 +409,4 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
             tuple(self._simplified_constants)
         agraph_duplicate._needs_opt = self._needs_opt
         agraph_duplicate._modified = self._modified
-        agraph_duplicate._output_dim = self._output_dim
         agraph_duplicate._use_simplification = self._use_simplification

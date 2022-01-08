@@ -3,7 +3,11 @@ import numpy as np
 from bingo.symbolic_regression.agraphMD.validation_backend.operator_validate import validate_operator
 
 
-def validate(stack, output_dim, x_dims, constant_dims):
+def validate_individual(individual):
+    return validate(individual.command_array, individual.input_dims, individual.output_dim, individual.constant_shapes)
+
+
+def validate(stack, x_dims, output_dim, constant_dims):
     dimensions = np.empty((len(stack), 2))
     for i, (node, param1, param2, param3) in enumerate(stack):
         valid, dimensions[i] = validate_operator(node, param1, param2, param3, dimensions, x_dims, constant_dims)

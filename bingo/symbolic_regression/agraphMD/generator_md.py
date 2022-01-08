@@ -22,9 +22,10 @@ class AGraphGeneratorMD(Generator):
                           Generator of stack components of agraphs
     """
     @argument_validation(agraph_size={">=": 1})
-    def __init__(self, agraph_size, component_generator, output_dim, use_simplification=False):
+    def __init__(self, agraph_size, component_generator, input_dims, output_dim, use_simplification=False):
         self.agraph_size = agraph_size
         self.component_generator = component_generator
+        self._input_dims = input_dims
         self._output_dim = output_dim
         self._use_simplification = use_simplification
         self._backend_generator_function = self._python_generator_function
@@ -39,24 +40,27 @@ class AGraphGeneratorMD(Generator):
         Agraph
             new random acyclic graph individual
         """
-        individual = self._backend_generator_function()
-        individual.command_array = self._create_command_array()
-        return individual
+        return self._create_individual()
 
     def _python_generator_function(self):
-        return AGraphMD(output_dim=self._output_dim, use_simplification=self._use_simplification)
+        return AGraphMD(input_dims=self._input_dims,
+                        output_dim=self._output_dim,
+                        use_simplification=self._use_simplification)
 
-    def _create_command_array(self):
+    def _create_individual(self):
         attempts = 0
-        potential_command_array = self._generate_potential_command_array()
-        while not validation_backend.validate(potential_command_array, self._output_dim):
+        individual = self._generate_potential_individual()
+        while not validation_backend.validate_individual(individual):
             if attempts >= 100:
-                raise RuntimeWarning("Could not generate valid agraph within 100 attempts")  # TODO test
-            potential_command_array = self._generate_potential_command_array()
-        return potential_command_array
+                raise RuntimeError("Could not generate valid agraph within 100 attempts")  # TODO test
+            individual = self._generate_potential_individual()
+        return individual
 
-    def _generate_potential_command_array(self):
+    def _generate_potential_individual(self):
         command_array = np.empty((self.agraph_size, 4), dtype=int)
         for i in range(self.agraph_size):
             command_array[i] = self.component_generator.random_command(i)
-        return command_array
+        individual = self._backend_generator_function()
+        individual.command_array = command_array
+        individual._update()  # TODO testing for this
+        return individual

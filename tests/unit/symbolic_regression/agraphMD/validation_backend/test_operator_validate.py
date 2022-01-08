@@ -26,12 +26,19 @@ def test_load_validate_valid(load_node, load_params):
     assert validate_operator(load_node, *load_params, [], load_dims, load_dims) == (True, (load_params[1], load_params[2]))
 
 
+@pytest.mark.parametrize("load_node, expected", [(VARIABLE, False), (CONSTANT, True)])
+def test_load_validate_negative_one_param1(load_node, expected):
+    print(validate_operator(load_node, -1, 0, 0, [], [(0, 0)], [(0, 0)]))
+    assert validate_operator(load_node, -1, 0, 0, [], [(0, 0)], [(0, 0)]) == (expected, (0, 0))
+
+
 @pytest.mark.parametrize("load_node", [VARIABLE, CONSTANT])
 @pytest.mark.parametrize("load_params", [[-2, 0, 0],  # scalar w/ bad param1
                                          [1, -1, 0],  # bad dimension 1
                                          [0, 0, -1],  # bad dimension 2
                                          [1, -1, -1],  # bad dimensions 1 and 2
-                                         [1, 1, 1]])  # dims different from loaded
+                                         [1, 1, 1],  # dims different from loaded
+                                         [2, 0, 0]])  # load out of range
 def test_load_validate_invalid(load_node, load_params):
     # load_cmd = [load_node, load_params[0], load_params[1], load_params[2]]
     load_dims = [(0, 0), (3, 3)]
