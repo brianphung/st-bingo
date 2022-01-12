@@ -7,7 +7,8 @@ import dill
 import sympy
 
 from bingo.symbolic_regression.agraph.operator_definitions import *
-from bingo.symbolic_regression.agraph.agraph import AGraph as pyagraph
+from bingo.symbolic_regression.agraph.agraph import AGraph as pyagraph, force_use_of_python_backends
+from bingo.symbolic_regression.agraph.evaluation_backend import evaluation_backend
 
 try:
     from bingocpp import AGraph as cppagraph
@@ -58,6 +59,16 @@ def sin_agraph(agraph_implementation):
     return sample
 
 
+@pytest.fixture
+def sample_x():
+    return np.array([[0], [1], [2]])
+
+
+@pytest.fixture
+def sample_constants():
+    return 10, 3.14
+
+
 def test_agraph_sympy_expr_constructor(engine, agraph_implementation):
     if engine == "c++":
         pytest.xfail(reason="Sympy to agraph not yet implemented in c++")
@@ -103,6 +114,40 @@ def test_agraph_sympy_constructor_invalid(engine, agraph_implementation):
     with pytest.raises(TypeError) as exception_info:
         agraph_implementation(sympy_representation=1)
     assert str(exception_info.value) == "sympy_representation is not a valid format"
+
+
+def test_evaluate_equation_at(mocker, engine, addition_agraph_with_constants, sample_x, sample_constants):
+    force_use_of_python_backends()
+    if engine == "c++":
+        pytest.xfail(reason="no mocking in c++")  # TODO
+
+    def mocked_evaluate(stack, x, constants):
+        if np.array_equal(stack, addition_agraph_with_constants._simplified_command_array) and \
+                np.array_equal(x, sample_x) and \
+                np.array_equal(constants, sample_constants):
+            print("hello!")
+            return 1
+        else:
+            return 0
+
+    mocker.patch.object(evaluation_backend, "evaluate", side_effect=mocked_evaluate)
+    addition_agraph_with_constants.set_local_optimization_params(sample_constants)
+    assert addition_agraph_with_constants.evaluate_equation_at(sample_x) == 1
+
+
+@pytest.mark.parametrize("error", [ArithmeticError, OverflowError,
+                                   ValueError, FloatingPointError])
+def test_evaluate_equation_at_error_output(mocker, agraph_implementation, sample_x, error):
+    force_use_of_python_backends()
+    if engine == "c++":
+        pytest.xfail(reason="no mocking in c++")  # TODO
+
+    def raise_error(stack, x, constants): raise error
+    mocker.patch.object(evaluation_backend, "evaluate", side_effect=raise_error)
+
+    graph = agraph_implementation()
+    np.testing.assert_array_equal(graph.evaluate_equation_at(sample_x),
+                                  np.full(np.shape(sample_x), np.nan))
 
 
 def test_agraph_copy_and_distance(addition_agraph):
