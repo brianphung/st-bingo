@@ -101,7 +101,7 @@ class AGraphMutationMD(Mutation):
         attempts = 0
         while attempts == 0 or not validate_individual(child):
             if attempts >= 100:
-                print("mutation failed")  # TODO turn into warning
+                # print("mutation failed")  # TODO turn into warning
                 # TODO reset last mutation location and last mutation type
                 return parent.copy()
             child = parent.copy()

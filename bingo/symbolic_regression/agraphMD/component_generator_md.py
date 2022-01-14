@@ -44,8 +44,8 @@ class ComponentGeneratorMD:
         #  each tuple in input_x_dimensions
         if input_x_dimensions is None:
             input_x_dimensions = []
-        self._input_x_dimensions = np.array(input_x_dimensions)
-        self._num_x = len(input_x_dimensions)
+        self.input_x_dimensions = np.array(input_x_dimensions)
+        self.num_x = len(input_x_dimensions)
         self._num_initial_load_statements = num_initial_load_statements
 
         self._terminal_pmf = self._make_terminal_pdf(constant_probability)
@@ -55,7 +55,7 @@ class ComponentGeneratorMD:
 
     def _make_terminal_pdf(self, constant_probability):
         if constant_probability is None:
-            terminal_weight = [1, self._num_x]
+            terminal_weight = [1, self.num_x]
         else:
             terminal_weight = [constant_probability,
                                1.0 - constant_probability]
@@ -178,13 +178,13 @@ class ComponentGeneratorMD:
         terminal = self.random_terminal()
         param = self.random_terminal_parameter(terminal)
         if terminal == VARIABLE:
-            dim1, dim2 = self._input_x_dimensions[param]
+            dim1, dim2 = self.input_x_dimensions[param]
         else:
             dim1, dim2 = self.random_dims()
         return np.array([terminal, param, dim1, dim2], dtype=int)
 
     def random_dims(self):
-        max_dim = max(self._input_x_dimensions.flatten())
+        max_dim = max(self.input_x_dimensions.flatten())
         dim1 = np.random.randint(0, max_dim + 1)
         if dim1 == 0:
             dim2 = 0
@@ -218,7 +218,7 @@ class ComponentGeneratorMD:
             parameter to be used in a terminal command
         """
         if terminal_number == 0:
-            param = np.random.randint(self._num_x)
+            param = np.random.randint(self.num_x)
         else:
             param = -1
         return param

@@ -264,7 +264,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         except (ArithmeticError, OverflowError, ValueError,
                 FloatingPointError) as err:
             LOGGER.warning("%s in stack evaluation", err)
-            return np.full(x.shape, np.nan)
+            return np.full((len(x[0]), *self.output_dim), np.inf)
 
     def evaluate_equation_with_x_gradient_at(self, x):
         """Evaluate `AGraph` and get its derivatives.

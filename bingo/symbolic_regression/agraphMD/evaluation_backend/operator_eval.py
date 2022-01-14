@@ -46,7 +46,7 @@ class _LoadXForwardEval(_ForwardEvalBase):
 class _LoadCForwardEval(_ForwardEvalBase):
     @staticmethod
     def evaluate(param1, param2, param3, x, constants, forward_eval):
-        return constants[param1]
+        return np.array([constants[param1]] * len(x[0]))
 
 
 class _AddForwardEval(_ForwardEvalBase):
@@ -60,7 +60,7 @@ class _SubtractForwardEval(_ForwardEvalBase):
     def evaluate(param1, param2, param3, x, constants, forward_eval):
         return forward_eval[param1] - forward_eval[param2]
 
-
+"""
 class _MultiplyForwardEval(_ForwardEvalBase):
     @staticmethod
     def evaluate(param1, param2, param3, x, constants, forward_eval):
@@ -68,6 +68,23 @@ class _MultiplyForwardEval(_ForwardEvalBase):
             return np.matmul(forward_eval[param1], forward_eval[param2])
         else:
             return forward_eval[param1] * forward_eval[param2]
+"""
+
+class _MultiplyForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        fe_1, fe_2 = forward_eval[param1], forward_eval[param2]
+        shape_1, shape_2 = fe_1.shape, fe_2.shape
+        if len(shape_1) == 1 or len(shape_2) == 1 or shape_1 == () or shape_2 == ():
+            if len(shape_1) == 1 and not len(shape_2) == 1:
+                fe_1 = fe_1.reshape(-1, 1, 1)
+            if len(shape_2) == 1 and not len(shape_1) == 1:
+                fe_2 = fe_2.reshape(-1, 1, 1)
+            return fe_1 * fe_2
+        else:
+            return np.matmul(fe_1, fe_2)
+
+        # TODO reshape not necessary if scalars are in (1, 1) form
 
 
 class _TransposeForwardEval(_ForwardEvalBase):
