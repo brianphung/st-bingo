@@ -160,6 +160,8 @@ class EvolutionaryOptimizer(metaclass=ABCMeta):
         test_fitness = None
         if self._test_function is not None:
             test_fitness = self._test_function(self.get_best_individual())
+        if self.generational_age % 10 == 0:
+            print(f"Generation: {self.generational_age}, Best fitness: {self._best_fitness}")
         log_string = "Generation: %d \t " % self.generational_age
         elapsed_time = datetime.now() - start_time
         log_string += "Elapsed time: %s \t " % elapsed_time
