@@ -37,7 +37,9 @@ class ComponentGeneratorMD:
     @argument_validation(num_initial_load_statements={">=": 1},
                          terminal_probability={">=": 0.0, "<=": 1.0},
                          constant_probability={">=": 0.0, "<=": 1.0})
-    def __init__(self, input_x_dimensions=None, num_initial_load_statements=1,
+    def __init__(self, input_x_dimensions=None,
+                 possible_dims=None,
+                 num_initial_load_statements=1,
                  terminal_probability=0.1,
                  constant_probability=None):
         # TODO can we verify len of input_x_dimensions/
@@ -45,6 +47,7 @@ class ComponentGeneratorMD:
         if input_x_dimensions is None:
             input_x_dimensions = []
         self.input_x_dimensions = np.array(input_x_dimensions)
+        self.possible_dims = possible_dims
         self.num_x = len(input_x_dimensions)
         self._num_initial_load_statements = num_initial_load_statements
 
@@ -184,13 +187,16 @@ class ComponentGeneratorMD:
         return np.array([terminal, param, dim1, dim2], dtype=int)
 
     def random_dims(self):
-        max_dim = max(self.input_x_dimensions.flatten())
-        dim1 = np.random.randint(0, max_dim + 1)
-        if dim1 == 0:
-            dim2 = 0
+        if not self.possible_dims:
+            max_dim = max(self.input_x_dimensions.flatten())
+            dim1 = np.random.randint(0, max_dim + 1)
+            if dim1 == 0:
+                dim2 = 0
+            else:
+                dim2 = np.random.randint(1, max_dim + 1)
+            return dim1, dim2
         else:
-            dim2 = np.random.randint(1, max_dim + 1)
-        return dim1, dim2
+            return self.possible_dims[np.random.randint(len(self.possible_dims))]
 
     def random_terminal(self):
         """Get a random terminal
