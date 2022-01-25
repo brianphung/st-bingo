@@ -153,6 +153,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         #         simplification_backend.reduce_stack(self._command_array)
         self._simplified_command_array = self._command_array
         self._simplified_command_array.flags.writeable = True
+        self._needs_opt = False  # TODO why?
 
         const_commands = self._simplified_command_array[:, 0] == CONSTANT
         num_const = np.count_nonzero(const_commands)
