@@ -17,27 +17,33 @@ from bingo.symbolic_regression.agraphMD.mutation_md import AGraphMutationMD
 from bingo.symbolic_regression.explicit_regression_md import ExplicitTrainingDataMD, ExplicitRegressionMD
 
 POP_SIZE = 100
-STACK_SIZE = 15
+STACK_SIZE = 10
+
+np.random.seed(2)
 
 
 def equation_eval(x):
-    mu = 2.0
-    alpha = 1.5
-    C = np.array([[2.0 * mu + alpha, alpha, 0.0],
-                  [alpha, 2.0 * mu + alpha, 0.0],
-                  [0.0, 0.0, mu]])
-    return C @ x[0] + C @ x[1]
+    C_0 = np.array([[1, 2, 3],
+                    [4, 5, 6],
+                    [7, 8, 9]])
+    C_1 = np.array([[1, 1, 1],
+                    [1, 1, 1],
+                    [1, 1, 1]])
+    return C_0 @ x[0] + C_1
 
 
 def execute_generational_steps():
+    np.random.seed(2)
     n_points = 100
-    x_0 = np.linspace(0, 11, 3 * n_points).reshape((-1, 3, 1))
-    x_1 = np.linspace(-10, 0, 3 * n_points).reshape((-1, 3, 1))
-    x = [x_0, x_1]
+    x_0 = np.random.rand(n_points, 3, 3)
+    x = [x_0]
     y = equation_eval(x)
     training_data = ExplicitTrainingDataMD(x, y)
 
     x_dims = [np.shape(_x[0]) for _x in x]
+    y_dim = y[0].shape
+    print("Dimensions of X variables:", x_dims)
+    print("Dimension of output:", y_dim)
 
     component_generator = ComponentGeneratorMD(x_dims)
     component_generator.add_operator("+")
@@ -46,7 +52,7 @@ def execute_generational_steps():
     crossover = AGraphCrossoverMD()
     mutation = AGraphMutationMD(component_generator, command_probability=0.333, node_probability=0.333,
                                 parameter_probability=0.333, prune_probability=0.0, fork_probability=0.0)
-    agraph_generator = AGraphGeneratorMD(STACK_SIZE, component_generator, x_dims, y[0].shape, use_simplification=False)
+    agraph_generator = AGraphGeneratorMD(STACK_SIZE, component_generator, x_dims, y_dim, use_simplification=False)
 
     fitness = ExplicitRegressionMD(training_data=training_data)
     local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='lm', param_init_bounds=[0, 0])
@@ -59,14 +65,17 @@ def execute_generational_steps():
     archipelago = SerialArchipelago(island)
 
     opt_result = archipelago.evolve_until_convergence(max_generations=500,
-                                                      fitness_threshold=1.0e-4)
+                                                      fitness_threshold=1.0e-10)
 
     print(opt_result)
     best_indiv = archipelago.get_best_individual()
     print(best_indiv.get_formatted_string("console"))
-    print(best_indiv.command_array)
-    print(best_indiv.constants)
     print(best_indiv.fitness)
+
+    test_x = [np.array([[[-1, 0, 1],
+                         [-2, -1, 0],
+                         [-3, -2, -1]]])]
+    print(best_indiv.evaluate_equation_at(test_x))
 
 
 def main():
