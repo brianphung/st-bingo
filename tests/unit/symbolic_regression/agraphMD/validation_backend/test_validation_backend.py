@@ -15,7 +15,8 @@ def complex_stack():
                      [MULTIPLICATION, 3, 4, 0],  # 5, 3x3
                      [CONSTANT, 2, 3, 3],        # 6, 3x3
                      [ADDITION, 5, 6, 0],        # 7, 3x3
-                     [SUBTRACTION, 5, 7, 0]], dtype=int)  # 8, 3x3
+                     [SIN, 7, 0, 0],             # 8, 3x3
+                     [SUBTRACTION, 5, 8, 0]], dtype=int)  # 9, 3x3
 
 
 @pytest.fixture
@@ -94,11 +95,23 @@ def test_validate_multiplication_invalid():
     assert validate(stack, [], (1, 1), [(1, 3), (2, 1)]) is False
 
 
-@pytest.mark.parametrize("op_dims", [(2, 3), (0, 0)])
+@pytest.mark.parametrize("op_dims", [(2, 3), (3, 1), (0, 0)])
 def test_validate_transpose_valid(op_dims):
     stack = np.array([[CONSTANT, 0, *op_dims],
                       [TRANSPOSE, 0, 0, 0]], dtype=int)
     assert validate(stack, [], (op_dims[1], op_dims[0]), [op_dims]) is True
+
+
+ARITY_ONE_NO_SHAPE_CHANGE_OPERATORS = [SIN, COS, EXPONENTIAL, LOGARITHM,
+                                       ABS, SQRT, SINH, COSH]
+
+
+@pytest.mark.parametrize("cmd_node", ARITY_ONE_NO_SHAPE_CHANGE_OPERATORS)
+@pytest.mark.parametrize("op_dims", [(2, 3), (3, 1), (0, 0)])
+def test_validate_arity_one_no_change_valid(cmd_node, op_dims):
+    stack = np.array([[CONSTANT, 0, *op_dims],
+                      [cmd_node, 0, 0, 0]], dtype=int)
+    assert validate(stack, [], op_dims, [op_dims]) is True
 
 
 def test_validate_complex(complex_stack, complex_stack_load_shapes):

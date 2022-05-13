@@ -50,7 +50,7 @@ def test_load_validate_invalid(load_node, load_params):
                                         [2, 3, -1]])  # multi-dim + multi-dim (same dims)
 def test_addition_like_validate_valid(cmd_node, cmd_params):
     dimensions = [(0, 0), (0, 0), (1, 2), (1, 2)]
-    assert validate_operator(cmd_node, *cmd_params, dimensions, [], []) == (True, (dimensions[cmd_params[0]]))
+    assert validate_operator(cmd_node, *cmd_params, dimensions, [], []) == (True, dimensions[cmd_params[0]])
 
 
 @pytest.mark.parametrize("cmd_node", [ADDITION, SUBTRACTION])
@@ -96,3 +96,21 @@ def test_transpose_validate_valid(transpose_cmd, expected_dim):
 
 def test_transpose_validate_invalid():
     assert validate_operator(TRANSPOSE, -1, 0, 0, [(0, 0)], [], [])[0] is False
+
+
+NO_SHAPE_CHANGE_AR_ONE_OPS = [SIN, COS, EXPONENTIAL, LOGARITHM,
+                              ABS, SQRT, SINH, COSH]
+
+
+@pytest.mark.parametrize("cmd_node", NO_SHAPE_CHANGE_AR_ONE_OPS)
+def test_no_change_operator_validate_invalid(cmd_node):
+    assert validate_operator(cmd_node, -1, 0, 0, [(3, 1)], [], [])[0] is False
+
+
+@pytest.mark.parametrize("cmd_node", NO_SHAPE_CHANGE_AR_ONE_OPS)
+@pytest.mark.parametrize("cmd_params", [[0, 0, 0],  # scalar
+                                        [1, 0, 0],  # multi-dimensional (vector)
+                                        [2, 0, 0]])  # multi-dimensional (matrix)
+def test_no_change_operator_validate_valid(cmd_node, cmd_params):
+    dimensions = [(0, 0), (4, 1), (3, 2)]
+    assert validate_operator(cmd_node, *cmd_params, dimensions, [], []) == (True, dimensions[cmd_params[0]])

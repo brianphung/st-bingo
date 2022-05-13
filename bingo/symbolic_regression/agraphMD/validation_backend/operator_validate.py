@@ -72,6 +72,12 @@ class _TransposeValidate(_ValidateBase):
         return param1 >= 0, (dimensions[param1][1], dimensions[param1][0])
 
 
+class _ArityOneOperatorWithNoShapeChange(_ValidateBase):
+    @staticmethod
+    def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
+        return param1 >= 0, tuple(dimensions[param1])
+
+
 def validate_operator(node, param1, param2, param3, dimensions, x_dims, constant_dims):
     return VALIDATE_MAP[node](param1, param2, param3, dimensions, x_dims, constant_dims)
 
@@ -82,5 +88,13 @@ VALIDATE_MAP = {INTEGER: _IntegerValidate.validate_op,
                 ADDITION: _AdditionLikeValidate.validate_op,
                 SUBTRACTION: _AdditionLikeValidate.validate_op,
                 MULTIPLICATION: _MultiplyValidate.validate_op,
+                SIN: _ArityOneOperatorWithNoShapeChange.validate_op,
+                COS: _ArityOneOperatorWithNoShapeChange.validate_op,
+                EXPONENTIAL: _ArityOneOperatorWithNoShapeChange.validate_op,
+                LOGARITHM: _ArityOneOperatorWithNoShapeChange.validate_op,
+                ABS: _ArityOneOperatorWithNoShapeChange.validate_op,
+                SQRT: _ArityOneOperatorWithNoShapeChange.validate_op,
+                SINH: _ArityOneOperatorWithNoShapeChange.validate_op,
+                COSH: _ArityOneOperatorWithNoShapeChange.validate_op,
                 TRANSPOSE: _TransposeValidate.validate_op}
 # TODO dot product, another operator???
