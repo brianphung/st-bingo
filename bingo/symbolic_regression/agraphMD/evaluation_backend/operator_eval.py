@@ -11,7 +11,8 @@ FORWARD_EVAL_MAP : dictionary {int: function}
 import numpy as np
 
 from bingo.symbolic_regression.agraphMD.operator_definitions \
-    import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, TRANSPOSE
+    import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, \
+    SIN, COS, EXPONENTIAL, LOGARITHM, ABS, SQRT, SINH, COSH, TRANSPOSE
 
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -87,6 +88,54 @@ class _MultiplyForwardEval(_ForwardEvalBase):
         # TODO reshape not necessary if scalars are in (1, 1) form
 
 
+class _SinForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        return np.sin(forward_eval[param1])
+
+
+class _CosForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        return np.cos(forward_eval[param1])
+
+
+class _ExpForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        return np.exp(forward_eval[param1])
+
+
+class _LogForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        return np.log(np.abs(forward_eval[param1]))
+
+
+class _AbsForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        return np.abs(forward_eval[param1])
+
+
+class _SqrtForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        return np.sqrt(np.abs(forward_eval[param1]))
+
+
+class _SinhForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        return np.sinh(forward_eval[param1])
+
+
+class _CoshForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        return np.cosh(forward_eval[param1])
+
+
 class _TransposeForwardEval(_ForwardEvalBase):
     @staticmethod
     def evaluate(param1, param2, param3, x, constants, forward_eval):
@@ -108,4 +157,12 @@ FORWARD_EVAL_MAP = {INTEGER: _IntegerForwardEval.evaluate,
                     ADDITION: _AddForwardEval.evaluate,
                     SUBTRACTION: _SubtractForwardEval.evaluate,
                     MULTIPLICATION: _MultiplyForwardEval.evaluate,
+                    SIN: _SinForwardEval.evaluate,
+                    COS: _CosForwardEval.evaluate,
+                    EXPONENTIAL: _ExpForwardEval.evaluate,
+                    LOGARITHM: _LogForwardEval.evaluate,
+                    ABS: _AbsForwardEval.evaluate,
+                    SQRT: _SqrtForwardEval.evaluate,
+                    SINH: _SinhForwardEval.evaluate,
+                    COSH: _CoshForwardEval.evaluate,
                     TRANSPOSE: _TransposeForwardEval.evaluate}

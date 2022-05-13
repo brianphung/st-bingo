@@ -1,6 +1,7 @@
 # Ignoring some linting rules in tests
 # pylint: disable=redefined-outer-name
 # pylint: disable=missing-docstring
+from copy import deepcopy
 import pytest
 import numpy as np
 
@@ -19,6 +20,15 @@ def sample_component_generator():
     return generator
 
 
+@pytest.fixture
+def empty_generator():
+    generator = ComponentGeneratorMD(input_x_dimensions=[(3, 1), (4, 1)],
+                                     num_initial_load_statements=2,
+                                     terminal_probability=0.4,
+                                     constant_probability=0.5)
+    return generator
+
+
 @pytest.mark.parametrize("param_name, param_value, expected_error", [
     ("num_initial_load_statements", 0, ValueError),
     ("num_initial_load_statements", "string", TypeError),
@@ -34,7 +44,6 @@ def test_raises_error_invalid_init(param_name, param_value, expected_error):
     kwargs[param_name] = param_value
     with pytest.raises(expected_error):
         _ = ComponentGeneratorMD(**kwargs)
-
 
 def test_raises_error_random_operator_with_no_operators():
     no_operator_generator = ComponentGeneratorMD(input_x_dimensions=[(3, 1)],
@@ -125,11 +134,31 @@ def test_random_operator_command():
     np.testing.assert_array_equal(terminal_command_2, expected_command_2)
 
 
-@pytest.mark.parametrize("operator_to_add", [SUBTRACTION, "subtraction", "-"])
-def test_add_operator(sample_component_generator, operator_to_add):
-    generator = ComponentGeneratorMD(input_x_dimensions=[(3, 1), (2, 1), (1, 1)])
-    generator.add_operator(operator_to_add)
-    assert generator.random_operator() == SUBTRACTION
+@pytest.mark.parametrize(["expected_operator", "inputs"],
+                         [(INTEGER, [INTEGER, "integer"]),
+                          (VARIABLE, [VARIABLE, "load", "x"]),
+                          (CONSTANT, [CONSTANT, "constant", "c"]),
+                          (ADDITION, [ADDITION, "add", "addition", "+"]),
+                          (SUBTRACTION, [SUBTRACTION, "subtract", "subtraction", "-"]),
+                          (MULTIPLICATION, [MULTIPLICATION, "multiply", "multiplication", "*"]),
+                          (DIVISION, [DIVISION, "divide", "division", "/"]),
+                          (SIN, [SIN, "sine", "sin"]),
+                          (COS, [COS, "cosine", "cos"]),
+                          (EXPONENTIAL, [EXPONENTIAL, "exponential", "exp", "e"]),
+                          (LOGARITHM, [LOGARITHM, "logarithm", "log"]),
+                          # (POWER, [POWER, "power", "pow", "^"]),
+                          (ABS, [ABS, "absolute value", "||", "|"]),
+                          (SQRT, [SQRT, "square root", "sqrt"]),
+                          # (SAFE_POWER, [SAFE_POWER, "safe power", "safe pow"]),
+                          (SINH, [SINH, "sineh", "sinh"]),
+                          (COSH, [COSH, "cosineh", "cosh"]),
+                          (TRANSPOSE, [TRANSPOSE, "transpose", "T"])])
+def test_add_operator(empty_generator, expected_operator, inputs):
+    for str_or_num in inputs:
+        generator = deepcopy(empty_generator)
+        generator.add_operator(str_or_num)
+        assert generator.get_number_of_operators() == 1
+        assert generator.random_operator() == expected_operator
 
 
 def test_raises_error_on_invalid_add_operator(sample_component_generator):
