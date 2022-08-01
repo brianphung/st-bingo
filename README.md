@@ -19,7 +19,7 @@ can be used as a general purpose evolutionary optimization package.
 # Quick Start
 
 ## Documentation
-[Full Documentation Here](https://nightdr.github.io/bingo/)
+[Full Documentation Here](https://nightdr.github.io/bingoStronglyTypedDocs)
 
 ## Installation
 
