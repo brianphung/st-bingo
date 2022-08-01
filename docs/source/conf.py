@@ -75,7 +75,7 @@ html_theme_options = {
     'icon_links': [
         {
             'name': 'GitHub',
-            'url': 'https://github.com/nasa/bingo',
+            'url': 'https://github.com/nightdr/bingo/tree/stronglyTyped',
             'icon': 'fab fa-github-square',
             'type': 'fontawesome'
         }
