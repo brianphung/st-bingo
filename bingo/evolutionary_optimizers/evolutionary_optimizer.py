@@ -111,7 +111,7 @@ class EvolutionaryOptimizer(metaclass=ABCMeta):
             removed
 
         Returns
-        --------
+        -------
         `OptimizeResult` :
             Object containing information about the result of the evolution
         """
@@ -332,7 +332,7 @@ class EvolutionaryOptimizer(metaclass=ABCMeta):
         should be considered for induction into the hall of fame.
 
         Returns
-        ----------
+        -------
         list of chromosomes :
             Potential hall of fame members
         """
@@ -355,7 +355,7 @@ class EvolutionaryOptimizer(metaclass=ABCMeta):
 
         Returns
         -------
-         :
+        fitness : numeric
             Fitness of best individual
         """
         raise NotImplementedError
