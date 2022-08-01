@@ -4,7 +4,6 @@
 import numpy as np
 
 from bingo.evolutionary_algorithms.age_fitness import AgeFitnessEA
-from bingo.evolutionary_optimizers.serial_archipelago import SerialArchipelago
 from bingo.evaluation.evaluation import Evaluation
 from bingo.evolutionary_optimizers.island import Island
 
@@ -64,18 +63,18 @@ def get_training_data(n_points, c_matrix_anisotropy):
 
 
 def get_evolutionary_optimizer(training_data):
-    x, y = training_data.x, training_data.y
-    x_dims = [np.shape(_x[0]) for _x in x]
-    y_dim = y[0].shape
+    inputs, output = training_data.x, training_data.y
+    input_dims = [np.shape(_x[0]) for _x in inputs]
+    output_dim = output[0].shape
 
-    component_generator = ComponentGeneratorMD(x_dims, possible_dims=[(6, 6)])
+    component_generator = ComponentGeneratorMD(input_dims, possible_dims=[(6, 6)])
     component_generator.add_operator("+")
     component_generator.add_operator("*")
 
     crossover = AGraphCrossoverMD()
     mutation = AGraphMutationMD(component_generator, command_probability=0.333, node_probability=0.333,
                                 parameter_probability=0.333, prune_probability=0.0, fork_probability=0.0)
-    agraph_generator = AGraphGeneratorMD(STACK_SIZE, component_generator, x_dims, y_dim, use_simplification=False)
+    agraph_generator = AGraphGeneratorMD(STACK_SIZE, component_generator, input_dims, output_dim, use_simplification=False)
 
     fitness = ExplicitRegressionMD(training_data=training_data)
     local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='lm', param_init_bounds=[0, 1])

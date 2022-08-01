@@ -14,3 +14,4 @@ Low-Level User Guide
     :caption: Other:
 
     _low_level/physics_fitness
+    _low_level/stress_strain
