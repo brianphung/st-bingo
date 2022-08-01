@@ -11,6 +11,7 @@ Low-Level User Guide
     _low_level/tutorial_4
 
 .. toctree::
+    :maxdepth: 1
     :caption: Other:
 
     _low_level/physics_fitness
