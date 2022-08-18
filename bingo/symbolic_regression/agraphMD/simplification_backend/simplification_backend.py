@@ -33,7 +33,7 @@ def get_utilized_commands(stack):
     util = [False]*stack.shape[0]
     util[-1] = True
     for i in range(1, stack.shape[0]):
-        node, param1, param2 = stack[-i]
+        node, param1, param2, param3 = stack[-i]
         if util[-i] and not IS_TERMINAL_MAP[node]:
             util[param1] = True
             if IS_ARITY_2_MAP[node]:
@@ -81,20 +81,22 @@ def reduce_stack(stack):
     used_commands = get_utilized_commands(stack)
     reduced_param_map = {}
     num_commands = np.sum(used_commands)
-    new_stack = np.empty((num_commands, 3), int)
+    new_stack = np.empty((num_commands, 4), int)
     j = 0
-    for i, (node, param1, param2) in enumerate(stack):
+    for i, (node, param1, param2, param3) in enumerate(stack):
         if used_commands[i]:
             new_stack[j, 0] = node
             if IS_TERMINAL_MAP[node]:
                 new_stack[j, 1] = param1
                 new_stack[j, 2] = param2
+                new_stack[j, 3] = param3
             else:
                 new_stack[j, 1] = reduced_param_map[param1]
                 if IS_ARITY_2_MAP[node]:
                     new_stack[j, 2] = reduced_param_map[param2]
                 else:
                     new_stack[j, 2] = new_stack[j, 1]
+                new_stack[j, 3] = new_stack[j, 1]
             reduced_param_map[i] = j
             j += 1
     return new_stack

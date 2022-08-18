@@ -149,9 +149,8 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         #     self._simplified_command_array = \
         #         simplification_backend.simplify_stack(self._command_array)
         # else:
-        #     self._simplified_command_array = \
-        #         simplification_backend.reduce_stack(self._command_array)
-        self._simplified_command_array = self._command_array
+        self._simplified_command_array = \
+            simplification_backend.reduce_stack(self._command_array)
         self._simplified_command_array.flags.writeable = True
         self._needs_opt = False  # TODO why?
 
