@@ -235,8 +235,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         list of bool of length N
             Boolean values for whether each command is utilized.
         """
-        return simplification_backend.get_utilized_commands(
-            self._command_array[:, :-1])
+        return simplification_backend.get_utilized_commands(self._command_array)
 
     def evaluate_equation_at(self, x):
         """Evaluate the `AGraph` equation.

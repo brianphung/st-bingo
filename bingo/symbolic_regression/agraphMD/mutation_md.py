@@ -320,13 +320,14 @@ class AGraphMutationMD(Mutation):
                     # make sure end of the stack is always a utilized command
                     stack[end_i] = \
                         np.array([arity_2_op, mutated_command_location,
-                                  randrange(start_i, i)], dtype=int)
+                                  randrange(start_i, i), 1], dtype=int)
                     # insert an arity 2 operator that
                     # links to the mutated_command
                 else:
                     stack[i] = \
                         np.array([self._component_generator.random_operator(),
-                                  randrange(start_i, i), randrange(start_i, i)],
+                                  randrange(start_i, i), randrange(start_i, i),
+                                  1],
                                  dtype=int)
                     # insert a random operator that connects
                     # to previously generated commands in the fork
@@ -336,6 +337,7 @@ class AGraphMutationMD(Mutation):
                     stack[i] = \
                         np.array([self._component_generator.random_operator(),
                                   mutated_command_location,
+                                  mutated_command_location,
                                   mutated_command_location],
                                  dtype=int)
                     # insert a random operator that links to the mutated command
@@ -344,10 +346,12 @@ class AGraphMutationMD(Mutation):
                     stack[end_i] = \
                         np.array([self._component_generator.random_operator(),
                                   i - 1,
+                                  i - 1,
                                   i - 1], dtype=int)
                 else:
                     stack[i] = \
                         np.array([self._component_generator.random_operator(),
+                                  i - 1,
                                   i - 1,
                                   i - 1], dtype=int)
                     # insert a random operator that connects
