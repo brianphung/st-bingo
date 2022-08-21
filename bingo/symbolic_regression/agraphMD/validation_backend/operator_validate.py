@@ -34,8 +34,12 @@ class _LoadConstantValidate(_ValidateBase):
         if param1 < -1:
             return False, dims_from_command
         try:
-            return param2 >= 0 and param3 >= 0 and \
-                   constant_dims[param1] == dims_from_command, dims_from_command
+            if dims_from_command != (0, 0):
+                return param2 >= 0 and param3 >= 0 and \
+                       constant_dims[param1] == dims_from_command, dims_from_command
+            else:
+                return param2 >= 0 and param3 >= 0 and \
+                       constant_dims[param1] == (), dims_from_command
         except IndexError:
             return False, dims_from_command
 
