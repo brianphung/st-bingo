@@ -215,7 +215,7 @@ class ContinuousLocalOptimizationMD(FitnessFunction):
                             as a fitness function".format(algorithm))
 
     def _optimize_params(self, individual):
-        original_shapes = individual.constant_shapes
+        original_shapes = individual.simplified_constant_shapes
         self._original_shapes = original_shapes
 
         num_params = individual.get_number_local_optimization_params()

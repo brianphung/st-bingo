@@ -90,6 +90,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         self._use_simplification = use_simplification
 
         self._command_array = np.empty([0, 4], dtype=int)
+        self._constants = []
 
         self._simplified_command_array = np.empty([0, 4], dtype=int)
         self._simplified_constants = []
@@ -136,13 +137,34 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         return self._simplified_constants
 
     @property
-    def constant_shapes(self):
+    def simplified_constant_shapes(self):
         return [np.shape(constant) for constant in self._simplified_constants]
+
+    @property
+    def constant_shapes(self):
+        return [np.shape(constant) for constant in self._constants]
 
     def _notify_modification(self):
         self._modified = True
         self._fitness = None
         self._fit_set = False
+
+    def _prepare_cmd_arr_for_constants(self, cmd_arr):
+        const_commands = cmd_arr[:, 0] == CONSTANT
+        num_const = np.count_nonzero(const_commands)
+        cmd_arr[const_commands, 1] = np.arange(num_const)
+        return cmd_arr
+
+    def _get_constants(self, cmd_arr):
+        constants = []
+        const_commands = cmd_arr[:, 0] == CONSTANT
+        for const_command in cmd_arr[const_commands]:
+            dim = tuple(const_command[2:])
+            if tuple(dim) == (0, 0):
+                constants.append(1.0)
+            else:
+                constants.append(np.ones(dim))
+        return tuple(constants)
 
     def _update(self):
         # if self._use_simplification:
@@ -154,28 +176,17 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         self._simplified_command_array.flags.writeable = True
         self._needs_opt = False  # TODO why?
 
-        const_commands = self._simplified_command_array[:, 0] == CONSTANT
-        num_const = np.count_nonzero(const_commands)
-        self._simplified_command_array[const_commands, 1] = np.arange(num_const)
+        self._simplified_command_array = \
+            self._prepare_cmd_arr_for_constants(self._simplified_command_array)
+        self._simplified_constants = \
+            self._get_constants(self._simplified_command_array)
 
-        optimization_aggression = 0
-        if optimization_aggression == 0 \
-                and num_const <= len(self._simplified_constants):
-            self._simplified_constants = self._simplified_constants[:num_const]
-        elif optimization_aggression == 1 \
-                and num_const == len(self._simplified_constants):
-            self._simplified_constants = self._simplified_constants[:num_const]
-        else:
-            self._simplified_constants = []
-            for const_command in self._simplified_command_array[const_commands]:  # TODO deal with duplicated constant commands
-                dim = tuple(const_command[2:])
-                if tuple(dim) == (0, 0):
-                    self._simplified_constants.append(1.0)
-                else:
-                    self._simplified_constants.append(np.ones(dim))
-            if num_const > 0:
-                self._needs_opt = True
-            self._simplified_constants = tuple(self._simplified_constants)
+        self._command_array = \
+            self._prepare_cmd_arr_for_constants(self.mutable_command_array)
+        self._constants = self._get_constants(self.command_array)
+
+        if len(self._simplified_constants) > 0:
+            self._needs_opt = True
         self._modified = False
 
     def needs_local_optimization(self):
