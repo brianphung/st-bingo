@@ -18,29 +18,36 @@ from bingo.symbolic_regression.agraphMD.validation_backend.\
     validation_backend import validate_individual
 
 
-# @pytest.fixture
-# def sample_agraph(mocker):
-#     stack = np.array([[VARIABLE, 0, 0],
-#                       [CONSTANT, 1, 1],
-#                       [COS, 1, 1],
-#                       [MULTIPLICATION, 0, 2],
-#                       [ADDITION, 0, 1],
-#                       [SIN, 3, 0]])
-#     sample = mocker.create_autospec(AGraph)
-#     type(sample).command_array = mocker.PropertyMock(return_value=stack.copy())
-#     type(sample).mutable_command_array = \
-#         mocker.PropertyMock(return_value=stack.copy())
-#     sample.get_utilized_commands.return_value = np.array([1, 1, 1, 1, 0, 1],
-#                                                          dtype=bool)
-#     sample.copy.return_value = sample
-#     return sample
+@pytest.fixture
+def sample_agraph(mocker):
+    def get_sample():  # have to make helper function for proper copy behavior
+        stack = np.array([[VARIABLE, 0, 3, 3],
+                          [CONSTANT, 0, 3, 3],
+                          [COS, 1, 1, 1],
+                          [MULTIPLICATION, 0, 2, 2],
+                          [ADDITION, 0, 1, 1],
+                          [SIN, 3, 0, 0]])
+        sample = mocker.create_autospec(AGraphMD)
+        type(sample).input_dims = mocker.PropertyMock(return_value=[(3, 3)])
+        type(sample).output_dim = mocker.PropertyMock(return_value=(3, 3))
+        type(sample).constant_shapes = mocker.PropertyMock(return_value=[(3, 3)])
+        type(sample).command_array = mocker.PropertyMock(return_value=stack.copy())
+        type(sample).mutable_command_array = type(sample).command_array
+        sample.get_utilized_commands.return_value = np.array([1, 1, 1, 1, 0, 1],
+                                                             dtype=bool)
+        return sample
+    sample = get_sample()
+    sample.copy.return_value = get_sample()
+    return sample
 
 
 @pytest.fixture
 def no_param_mut_or_prune_agraph(mocker):
     stack = np.array([[VARIABLE, 0, 3, 3],
-                      [ADDITION, 0, 3, 3]])
+                      [ADDITION, 0, 0, 0]])
     sample = mocker.create_autospec(AGraphMD)
+    type(sample).input_dims = mocker.PropertyMock(return_value=[(3, 3)])
+    type(sample).output_dim = mocker.PropertyMock(return_value=(3, 3))
     type(sample).command_array = mocker.PropertyMock(return_value=stack.copy())
     type(sample).mutable_command_array = \
         mocker.PropertyMock(return_value=stack.copy())
@@ -159,23 +166,24 @@ def unused_op_invalid_after_fork_mutation_agraph():
     return test_graph
 
 
-# @pytest.fixture
-# def sample_component_generator(mocker):
-#     sample = mocker.create_autospec(ComponentGenerator)
-#     random_commands = cycle([[CONSTANT, -1, -1],
-#                              [VARIABLE, 0, 0],
-#                              [ADDITION, 6, 6],
-#                              [SUBTRACTION, 7, 8],
-#                              [VARIABLE, 1, 1]])
-#     sample.random_command.side_effect = random_commands
-#     sample.get_number_of_terminals.return_value = 2
-#     sample.get_number_of_operators.return_value = 2
-#     sample.random_terminal.side_effect = cycle([CONSTANT, VARIABLE])
-#     sample.random_terminal_parameter.return_value = 2
-#     sample.random_operator.side_effect = cycle([ADDITION, SUBTRACTION])
-#     sample.random_operator_parameter.return_value = 10
-#     type(sample).input_x_dimension = mocker.PropertyMock(return_value=2)
-#     return sample
+@pytest.fixture
+def sample_component_generator(mocker):
+    sample = mocker.create_autospec(ComponentGeneratorMD)
+    random_commands = cycle([[CONSTANT, -1, 3, 3],
+                             [VARIABLE, 0, 3, 3],
+                             [ADDITION, 6, 6, 6],
+                             [SUBTRACTION, 7, 8, 8],
+                             [VARIABLE, 1, 3, 3]])
+    sample.random_command.side_effect = random_commands
+    sample.get_number_of_terminals.return_value = 2
+    sample.get_number_of_operators.return_value = 2
+    sample.random_terminal.side_effect = cycle([CONSTANT, VARIABLE])
+    sample.random_terminal_parameter.return_value = 2
+    sample.random_operator.side_effect = cycle([ADDITION, SUBTRACTION])
+    sample.random_operator_parameter.return_value = 10
+    type(sample).input_x_dimensions = mocker.PropertyMock(return_value=[(3, 3)])
+    type(sample).num_x = 1
+    return sample
 
 
 @pytest.fixture
@@ -277,46 +285,51 @@ def fork_mutation(fork_mutation_component_generator):
 #     assert sum(changed_columns[1:]) > 0
 #
 #
-# @pytest.mark.parametrize("repeats", range(5))
-# def test_pruning_mutation(sample_agraph, sample_component_generator, repeats):
-#     mutation = AGraphMutation(sample_component_generator,
-#                               command_probability=0.0,
-#                               node_probability=0.0,
-#                               parameter_probability=0.0,
-#                               prune_probability=1.0,
-#                               fork_probability=0.0)
-#     child = mutation(sample_agraph)
-#     p_stack = sample_agraph.command_array
-#     c_stack = child.mutable_command_array
-#     changes = p_stack != c_stack
-#
-#     p_changes = p_stack[changes]
-#     c_changes = c_stack[changes]
-#     if p_changes.size > 0:
-#         np.testing.assert_array_equal(p_changes,
-#                                       np.full(p_changes.shape,
-#                                               p_changes[0]))
-#         np.testing.assert_array_equal(c_changes,
-#                                       np.full(c_changes.shape,
-#                                               c_changes[0]))
-#         assert c_changes[0] < p_changes[0]
-#
-#
-# @pytest.mark.parametrize("algo_index", [2, 3])
-# def test_impossible_param_or_prune_mutation(mocker, algo_index,
-#                                             no_param_mut_or_prune_agraph,
-#                                             sample_component_generator):
-#     type(sample_component_generator).input_x_dimension = \
-#         mocker.PropertyMock(return_value=1)
-#     input_probabilities = [0.0] * 5
-#     input_probabilities[algo_index] = 1.0
-#     mutation = AGraphMutation(sample_component_generator, *input_probabilities)
-#
-#     child = mutation(no_param_mut_or_prune_agraph)
-#     p_stack = no_param_mut_or_prune_agraph.command_array
-#     c_stack = child.mutable_command_array
-#
-#     np.testing.assert_array_equal(c_stack, p_stack)
+@pytest.mark.parametrize("repeats", range(5))
+def test_pruning_mutation(sample_agraph, sample_component_generator, repeats):
+    mutation = AGraphMutationMD(sample_component_generator,
+                                command_probability=0.0,
+                                node_probability=0.0,
+                                parameter_probability=0.0,
+                                prune_probability=1.0,
+                                fork_probability=0.0)
+    child = mutation(sample_agraph)
+    p_stack = sample_agraph.command_array
+    c_stack = child.mutable_command_array
+    changes = p_stack != c_stack
+
+    print(changes)
+
+    p_changes = p_stack[changes]
+    c_changes = c_stack[changes]
+    assert p_changes.size > 0
+
+    print(np.full(p_changes.shape, p_changes[0]))
+    np.testing.assert_array_equal(p_changes,
+                                  np.full(p_changes.shape,
+                                          p_changes[0]))
+    np.testing.assert_array_equal(c_changes,
+                                  np.full(c_changes.shape,
+                                          c_changes[0]))
+    assert c_changes[0] < p_changes[0]
+
+
+@pytest.mark.parametrize("algo_index", [2, 3])
+def test_impossible_param_or_prune_mutation(mocker, algo_index,
+                                            no_param_mut_or_prune_agraph,
+                                            sample_component_generator):
+    type(sample_component_generator).input_x_dimensions = \
+        mocker.PropertyMock(return_value=[(3, 3)])
+    input_probabilities = [0.0] * 5
+    input_probabilities[algo_index] = 1.0
+    mutation = AGraphMutationMD(sample_component_generator,
+                                *input_probabilities)
+
+    child = mutation(no_param_mut_or_prune_agraph)
+    p_stack = no_param_mut_or_prune_agraph.command_array
+    c_stack = child.mutable_command_array
+
+    np.testing.assert_array_equal(c_stack, p_stack)
 #
 #
 # def test_mutate_variable(single_variable_agraph, sample_component_generator):

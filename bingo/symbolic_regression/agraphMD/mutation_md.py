@@ -234,13 +234,13 @@ class AGraphMutationMD(Mutation):
         pruned_param = individual.command_array[mutation_location,
                                                 1 + pruned_param_num]
 
-        for i, (node, p_1, p_2) in \
+        for i, (node, p_1, p_2, p_3) in \
                 enumerate(individual.command_array[mutation_location:]):
             if not IS_TERMINAL_MAP[node]:
                 if p_1 == mutation_location:
                     individual.mutable_command_array[
                         mutation_location + i, 1] = pruned_param
-                if p_2 == mutation_location:
+                if IS_ARITY_2_MAP[node] and p_2 == mutation_location:
                     individual.mutable_command_array[
                         mutation_location + i, 2] = pruned_param
 
