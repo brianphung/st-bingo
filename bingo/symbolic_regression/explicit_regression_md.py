@@ -8,6 +8,7 @@ that are unique to explicit symbolic regression. Namely, these classes are an
 appropriate fitness evaluator and a corresponding training data container.
 """
 import logging
+import numpy as np
 
 from ..evaluation.fitness_function import VectorBasedFunction
 from ..evaluation.training_data import TrainingData
@@ -53,7 +54,10 @@ class ExplicitRegressionMD(VectorBasedFunction):
         error = f_of_x - self.training_data.y
         if not self._relative:
             return error.flatten()
-        return (error / self.training_data.y).flatten()
+        rel_err = 2.0 * error / (np.abs(f_of_x) + np.abs(self.training_data.y))  # RPD
+        both_zero = (f_of_x == 0) & (self.training_data.y == 0)
+        rel_err[both_zero] = 0
+        return rel_err.flatten()
 
     def get_fitness_vector_and_jacobian(self, individual):
         self.eval_count += 1
