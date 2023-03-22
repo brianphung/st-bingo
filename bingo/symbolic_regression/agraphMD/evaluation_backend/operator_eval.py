@@ -12,7 +12,8 @@ import numpy as np
 
 from bingo.symbolic_regression.agraphMD.operator_definitions \
     import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, \
-    SIN, COS, EXPONENTIAL, LOGARITHM, ABS, SQRT, SINH, COSH, TRANSPOSE, ARCTAN, ARCCOS
+    SIN, COS, EXPONENTIAL, LOGARITHM, ABS, SQRT, SINH, COSH, TRANSPOSE, ARCTAN, \
+    ARCCOS, CROSS
 
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -157,6 +158,23 @@ class _ArccosForwardEval(_ForwardEvalBase):
         return np.arccos(forward_eval[param1])
 
 
+def _get_dim_idx_of_three(arr):
+    return (np.array(arr.shape) == 3).nonzero()[0][0]
+
+
+class _CrossForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        first_vec = forward_eval[param1]
+        second_vec = forward_eval[param2]
+
+        param1_dim_with_three = _get_dim_idx_of_three(first_vec)
+        param2_dim_with_three = _get_dim_idx_of_three(second_vec)
+        assert param1_dim_with_three == param2_dim_with_three
+
+        return np.cross(first_vec, second_vec, axis=param1_dim_with_three)
+
+
 def forward_eval_function(node, param1, param2, param3, x, constants, forward_eval):
     """Performs calculation of one line of stack"""
     return FORWARD_EVAL_MAP[node](param1, param2, param3, x, constants, forward_eval)
@@ -179,4 +197,5 @@ FORWARD_EVAL_MAP = {INTEGER: _IntegerForwardEval.evaluate,
                     COSH: _CoshForwardEval.evaluate,
                     TRANSPOSE: _TransposeForwardEval.evaluate,
                     ARCTAN: _ArctanForwardEval.evaluate,
-                    ARCCOS: _ArccosForwardEval.evaluate}
+                    ARCCOS: _ArccosForwardEval.evaluate,
+                    CROSS: _CrossForwardEval.evaluate}
