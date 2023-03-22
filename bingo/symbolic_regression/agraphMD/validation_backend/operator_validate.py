@@ -82,7 +82,7 @@ class _ArityOneOperatorWithNoShapeChange(_ValidateBase):
         return param1 >= 0, tuple(dimensions[param1])
 
 
-class _ThreeDimVectorOperatorWithNoShapeChange(_ValidateBase):
+class _CrossValidate(_ValidateBase):
     @staticmethod
     def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
         if param1 < 0 or param2 < 0:
@@ -93,6 +93,15 @@ class _ThreeDimVectorOperatorWithNoShapeChange(_ValidateBase):
         valid = dim_1 == dim_2 and 3 in dim_1
 
         return valid, dim_1
+
+
+class _NormalizeValidate(_ValidateBase):
+    @staticmethod
+    def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
+        if param1 < 0:
+            return False, (0, 0)
+        dim_1 = dimensions[param1]
+        return 3 in dim_1, dim_1
 
 def validate_operator(node, param1, param2, param3, dimensions, x_dims, constant_dims):
     return VALIDATE_MAP[node](param1, param2, param3, dimensions, x_dims, constant_dims)
@@ -115,5 +124,6 @@ VALIDATE_MAP = {INTEGER: _IntegerValidate.validate_op,
                 TRANSPOSE: _TransposeValidate.validate_op,
                 ARCTAN: _ArityOneOperatorWithNoShapeChange.validate_op,
                 ARCCOS: _ArityOneOperatorWithNoShapeChange.validate_op,
-                CROSS: _ThreeDimVectorOperatorWithNoShapeChange.validate_op}
+                CROSS: _CrossValidate.validate_op,
+                NORMALIZE: _NormalizeValidate.validate_op}
 # TODO dot product, another operator???

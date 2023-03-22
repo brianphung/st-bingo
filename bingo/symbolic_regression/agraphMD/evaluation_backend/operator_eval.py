@@ -13,7 +13,7 @@ import numpy as np
 from bingo.symbolic_regression.agraphMD.operator_definitions \
     import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, \
     SIN, COS, EXPONENTIAL, LOGARITHM, ABS, SQRT, SINH, COSH, TRANSPOSE, ARCTAN, \
-    ARCCOS, CROSS
+    ARCCOS, CROSS, NORMALIZE
 
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -175,6 +175,16 @@ class _CrossForwardEval(_ForwardEvalBase):
         return np.cross(first_vec, second_vec, axis=param1_dim_with_three)
 
 
+class _NormalizeForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        vectors = forward_eval[param1]
+        dim_with_three = _get_dim_idx_of_three(vectors)
+        magnitude = np.linalg.norm(vectors, axis=dim_with_three)
+
+        return vectors / magnitude[:, None]
+
+
 def forward_eval_function(node, param1, param2, param3, x, constants, forward_eval):
     """Performs calculation of one line of stack"""
     return FORWARD_EVAL_MAP[node](param1, param2, param3, x, constants, forward_eval)
@@ -198,4 +208,5 @@ FORWARD_EVAL_MAP = {INTEGER: _IntegerForwardEval.evaluate,
                     TRANSPOSE: _TransposeForwardEval.evaluate,
                     ARCTAN: _ArctanForwardEval.evaluate,
                     ARCCOS: _ArccosForwardEval.evaluate,
-                    CROSS: _CrossForwardEval.evaluate}
+                    CROSS: _CrossForwardEval.evaluate,
+                    NORMALIZE: _NormalizeForwardEval.evaluate}
