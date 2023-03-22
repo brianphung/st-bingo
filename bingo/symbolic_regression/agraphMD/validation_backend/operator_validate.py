@@ -101,5 +101,6 @@ VALIDATE_MAP = {INTEGER: _IntegerValidate.validate_op,
                 SINH: _ArityOneOperatorWithNoShapeChange.validate_op,
                 COSH: _ArityOneOperatorWithNoShapeChange.validate_op,
                 TRANSPOSE: _TransposeValidate.validate_op,
-                ARCTAN: _ArityOneOperatorWithNoShapeChange.validate_op}
+                ARCTAN: _ArityOneOperatorWithNoShapeChange.validate_op,
+                ARCCOS: _ArityOneOperatorWithNoShapeChange.validate_op}
 # TODO dot product, another operator???

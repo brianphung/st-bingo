@@ -29,6 +29,7 @@ SINH = 14
 COSH = 15
 TRANSPOSE = 16
 ARCTAN = 17
+ARCCOS = 18
 
 IS_ARITY_2_MAP = {INTEGER: False,
                   VARIABLE: False,
@@ -48,7 +49,8 @@ IS_ARITY_2_MAP = {INTEGER: False,
                   SQRT: False,
                   SAFE_POWER: True,
                   TRANSPOSE: False,
-                  ARCTAN: False}
+                  ARCTAN: False,
+                  ARCCOS: False}
 IS_TERMINAL_MAP = {INTEGER: True,
                    VARIABLE: True,
                    CONSTANT: True,
@@ -67,7 +69,8 @@ IS_TERMINAL_MAP = {INTEGER: True,
                    SQRT: False,
                    SAFE_POWER: False,
                    TRANSPOSE: False,
-                   ARCTAN: False}
+                   ARCTAN: False,
+                   ARCCOS: False}
 OPERATOR_NAMES = {INTEGER: ["integer"],
                   VARIABLE: ["load", "x"],
                   CONSTANT: ["constant", "c"],
@@ -87,4 +90,6 @@ OPERATOR_NAMES = {INTEGER: ["integer"],
                   COSH: ["cosineh", "cosh"],
                   TRANSPOSE: ["transpose", "T"],
                   ARCTAN: ["arctan", "atan", "invtan", "inverse tangent",
-                           "inverse tan"]}
+                           "inverse tan"],
+                  ARCCOS: ["arccos", "acos", "invcos", "inverse cosgent",
+                           "inverse cos"]}

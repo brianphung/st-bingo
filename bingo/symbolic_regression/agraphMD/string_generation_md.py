@@ -13,7 +13,7 @@ CONSOLE_PRINT_MAP : dict {int: str}
 from bingo.symbolic_regression.agraphMD.operator_definitions \
     import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, \
            DIVISION, SIN, COS, SINH, COSH, EXPONENTIAL, LOGARITHM, POWER, ABS, \
-           SQRT, SAFE_POWER, TRANSPOSE, ARCTAN
+           SQRT, SAFE_POWER, TRANSPOSE, ARCTAN, ARCCOS
 
 STACK_PRINT_MAP = {ADDITION: "({}) + ({})",
                    SUBTRACTION: "({}) - ({})",
@@ -30,7 +30,8 @@ STACK_PRINT_MAP = {ADDITION: "({}) + ({})",
                    SQRT: "sqrt ({})",
                    SAFE_POWER: "(|{}|) ^ ({})",
                    TRANSPOSE: "{}T",
-                   ARCTAN: "arctan ({})"}
+                   ARCTAN: "arctan ({})",
+                   ARCCOS: "arccos ({})"}
 LATEX_PRINT_MAP = {ADDITION: "{} + {}",
                    SUBTRACTION: "{} - ({})",
                    MULTIPLICATION: "({})({})",
@@ -46,7 +47,8 @@ LATEX_PRINT_MAP = {ADDITION: "{} + {}",
                    SQRT: "\\sqrt{{ {} }}",
                    SAFE_POWER: "(|{}|)^{{ ({}) }}",
                    TRANSPOSE: "{}^T",
-                   ARCTAN: "tan^{-1}{{ {} }}"}
+                   ARCTAN: "tan^{-1}{{ {} }}",
+                   ARCCOS: "cos^{-1}{{ {} }}"}
 SYMPY_PRINT_MAP = {ADDITION: "{} + {}",
                    SUBTRACTION: "{} - ({})",
                    MULTIPLICATION: "({})*({})",
@@ -62,7 +64,8 @@ SYMPY_PRINT_MAP = {ADDITION: "{} + {}",
                    SQRT: "sqrt({})",
                    SAFE_POWER: "abs({})**({})",
                    TRANSPOSE: "{}^T",
-                   ARCTAN: "atan({})"}
+                   ARCTAN: "atan({})",
+                   ARCCOS: "acos({})"}
 CONSOLE_PRINT_MAP = {ADDITION: "{} + {}",
                      SUBTRACTION: "{} - ({})",
                      MULTIPLICATION: "({})({})",
@@ -78,7 +81,8 @@ CONSOLE_PRINT_MAP = {ADDITION: "{} + {}",
                      SQRT: "sqrt({})",
                      SAFE_POWER: "(|{}|)^({})",
                      TRANSPOSE: "{}^T",
-                     ARCTAN: "arctan({})"}
+                     ARCTAN: "arctan({})",
+                     ARCCOS: "arccos({})"}
 
 def get_formatted_string(eq_format, command_array, constants):
     """ Builds a formatted string from command array and constants

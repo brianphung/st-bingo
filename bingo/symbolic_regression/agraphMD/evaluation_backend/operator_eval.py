@@ -12,7 +12,7 @@ import numpy as np
 
 from bingo.symbolic_regression.agraphMD.operator_definitions \
     import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, \
-    SIN, COS, EXPONENTIAL, LOGARITHM, ABS, SQRT, SINH, COSH, TRANSPOSE, ARCTAN
+    SIN, COS, EXPONENTIAL, LOGARITHM, ABS, SQRT, SINH, COSH, TRANSPOSE, ARCTAN, ARCCOS
 
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -151,6 +151,12 @@ class _ArctanForwardEval(_ForwardEvalBase):
         return np.arctan(forward_eval[param1])
 
 
+class _ArccosForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        return np.arccos(forward_eval[param1])
+
+
 def forward_eval_function(node, param1, param2, param3, x, constants, forward_eval):
     """Performs calculation of one line of stack"""
     return FORWARD_EVAL_MAP[node](param1, param2, param3, x, constants, forward_eval)
@@ -172,4 +178,5 @@ FORWARD_EVAL_MAP = {INTEGER: _IntegerForwardEval.evaluate,
                     SINH: _SinhForwardEval.evaluate,
                     COSH: _CoshForwardEval.evaluate,
                     TRANSPOSE: _TransposeForwardEval.evaluate,
-                    ARCTAN: _ArctanForwardEval.evaluate}
+                    ARCTAN: _ArctanForwardEval.evaluate,
+                    ARCCOS: _ArccosForwardEval.evaluate}
