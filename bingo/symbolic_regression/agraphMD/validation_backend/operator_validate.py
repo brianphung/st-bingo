@@ -1,3 +1,5 @@
+import numpy as np
+
 from bingo.symbolic_regression.agraphMD.operator_definitions import *
 
 
@@ -90,7 +92,7 @@ class _CrossValidate(_ValidateBase):
 
         dim_1 = dimensions[param1]
         dim_2 = dimensions[param2]
-        valid = dim_1 == dim_2 and 3 in dim_1
+        valid = np.array_equal(dim_1, dim_2) and 3 in dim_1
 
         return valid, dim_1
 
@@ -102,6 +104,7 @@ class _NormalizeValidate(_ValidateBase):
             return False, (0, 0)
         dim_1 = dimensions[param1]
         return 3 in dim_1, dim_1
+
 
 def validate_operator(node, param1, param2, param3, dimensions, x_dims, constant_dims):
     return VALIDATE_MAP[node](param1, param2, param3, dimensions, x_dims, constant_dims)
