@@ -13,7 +13,7 @@ CONSOLE_PRINT_MAP : dict {int: str}
 from bingo.symbolic_regression.agraphMD.operator_definitions \
     import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, \
            DIVISION, SIN, COS, SINH, COSH, EXPONENTIAL, LOGARITHM, POWER, ABS, \
-           SQRT, SAFE_POWER, TRANSPOSE
+           SQRT, SAFE_POWER, TRANSPOSE, ARCTAN, ARCCOS, CROSS, NORMALIZE
 
 STACK_PRINT_MAP = {ADDITION: "({}) + ({})",
                    SUBTRACTION: "({}) - ({})",
@@ -29,7 +29,11 @@ STACK_PRINT_MAP = {ADDITION: "({}) + ({})",
                    ABS: "abs ({})",
                    SQRT: "sqrt ({})",
                    SAFE_POWER: "(|{}|) ^ ({})",
-                   TRANSPOSE: "{}T"}
+                   TRANSPOSE: "{}T",
+                   ARCTAN: "arctan ({})",
+                   ARCCOS: "arccos ({})",
+                   CROSS: "({}) x ({})",
+                   NORMALIZE: "normalize ({})"}
 LATEX_PRINT_MAP = {ADDITION: "{} + {}",
                    SUBTRACTION: "{} - ({})",
                    MULTIPLICATION: "({})({})",
@@ -44,7 +48,11 @@ LATEX_PRINT_MAP = {ADDITION: "{} + {}",
                    ABS: "|{}|",
                    SQRT: "\\sqrt{{ {} }}",
                    SAFE_POWER: "(|{}|)^{{ ({}) }}",
-                   TRANSPOSE: "{}^T"}
+                   TRANSPOSE: "{}^T",
+                   ARCTAN: "tan^{-1}{{ {} }}",
+                   ARCCOS: "cos^{-1}{{ {} }}",
+                   CROSS: "({}) \\times ({})",
+                   NORMALIZE: "\\text{normalize}({})"}
 SYMPY_PRINT_MAP = {ADDITION: "{} + {}",
                    SUBTRACTION: "{} - ({})",
                    MULTIPLICATION: "({})*({})",
@@ -59,7 +67,11 @@ SYMPY_PRINT_MAP = {ADDITION: "{} + {}",
                    ABS: "abs({})",
                    SQRT: "sqrt({})",
                    SAFE_POWER: "abs({})**({})",
-                   TRANSPOSE: "{}^T"}
+                   TRANSPOSE: "{}^T",
+                   ARCTAN: "atan({})",
+                   ARCCOS: "acos({})",
+                   CROSS: "cross({}, {})",
+                   NORMALIZE: "normalize({})"}
 CONSOLE_PRINT_MAP = {ADDITION: "{} + {}",
                      SUBTRACTION: "{} - ({})",
                      MULTIPLICATION: "({})({})",
@@ -74,7 +86,11 @@ CONSOLE_PRINT_MAP = {ADDITION: "{} + {}",
                      ABS: "|{}|",
                      SQRT: "sqrt({})",
                      SAFE_POWER: "(|{}|)^({})",
-                     TRANSPOSE: "{}^T"}
+                     TRANSPOSE: "{}^T",
+                     ARCTAN: "arctan({})",
+                     ARCCOS: "arccos({})",
+                     CROSS: "({}) x ({})",
+                     NORMALIZE: "normalize({})"}
 
 def get_formatted_string(eq_format, command_array, constants):
     """ Builds a formatted string from command array and constants

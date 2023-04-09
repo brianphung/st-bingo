@@ -12,7 +12,8 @@ import numpy as np
 
 from bingo.symbolic_regression.agraphMD.operator_definitions \
     import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, \
-    SIN, COS, EXPONENTIAL, LOGARITHM, ABS, SQRT, SINH, COSH, TRANSPOSE
+    SIN, COS, EXPONENTIAL, LOGARITHM, ABS, SQRT, SINH, COSH, TRANSPOSE, ARCTAN, \
+    ARCCOS, CROSS, NORMALIZE
 
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -145,6 +146,45 @@ class _TransposeForwardEval(_ForwardEvalBase):
             return np.transpose(forward_eval[param1])
 
 
+class _ArctanForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        return np.arctan(forward_eval[param1])
+
+
+class _ArccosForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        return np.arccos(forward_eval[param1])
+
+
+def _get_dim_idx_of_three(arr):
+    return (np.array(arr.shape) == 3).nonzero()[0][0]
+
+
+class _CrossForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        first_vec = forward_eval[param1]
+        second_vec = forward_eval[param2]
+
+        param1_dim_with_three = _get_dim_idx_of_three(first_vec)
+        param2_dim_with_three = _get_dim_idx_of_three(second_vec)
+        assert param1_dim_with_three == param2_dim_with_three
+
+        return np.cross(first_vec, second_vec, axis=param1_dim_with_three)
+
+
+class _NormalizeForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        vectors = forward_eval[param1]
+        dim_with_three = _get_dim_idx_of_three(vectors)
+        magnitude = np.linalg.norm(vectors, axis=dim_with_three)
+
+        return vectors / magnitude[:, None]
+
+
 def forward_eval_function(node, param1, param2, param3, x, constants, forward_eval):
     """Performs calculation of one line of stack"""
     return FORWARD_EVAL_MAP[node](param1, param2, param3, x, constants, forward_eval)
@@ -165,4 +205,8 @@ FORWARD_EVAL_MAP = {INTEGER: _IntegerForwardEval.evaluate,
                     SQRT: _SqrtForwardEval.evaluate,
                     SINH: _SinhForwardEval.evaluate,
                     COSH: _CoshForwardEval.evaluate,
-                    TRANSPOSE: _TransposeForwardEval.evaluate}
+                    TRANSPOSE: _TransposeForwardEval.evaluate,
+                    ARCTAN: _ArctanForwardEval.evaluate,
+                    ARCCOS: _ArccosForwardEval.evaluate,
+                    CROSS: _CrossForwardEval.evaluate,
+                    NORMALIZE: _NormalizeForwardEval.evaluate}

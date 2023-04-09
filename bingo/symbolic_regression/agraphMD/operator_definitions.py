@@ -28,6 +28,10 @@ SAFE_POWER = 13
 SINH = 14
 COSH = 15
 TRANSPOSE = 16
+ARCTAN = 17
+ARCCOS = 18
+CROSS = 20
+NORMALIZE = 21
 
 IS_ARITY_2_MAP = {INTEGER: False,
                   VARIABLE: False,
@@ -46,7 +50,11 @@ IS_ARITY_2_MAP = {INTEGER: False,
                   ABS: False,
                   SQRT: False,
                   SAFE_POWER: True,
-                  TRANSPOSE: False}
+                  TRANSPOSE: False,
+                  ARCTAN: False,
+                  ARCCOS: False,
+                  CROSS: True,
+                  NORMALIZE: False}
 IS_TERMINAL_MAP = {INTEGER: True,
                    VARIABLE: True,
                    CONSTANT: True,
@@ -64,7 +72,11 @@ IS_TERMINAL_MAP = {INTEGER: True,
                    ABS: False,
                    SQRT: False,
                    SAFE_POWER: False,
-                   TRANSPOSE: False}
+                   TRANSPOSE: False,
+                   ARCTAN: False,
+                   ARCCOS: False,
+                   CROSS: False,
+                   NORMALIZE: False}
 OPERATOR_NAMES = {INTEGER: ["integer"],
                   VARIABLE: ["load", "x"],
                   CONSTANT: ["constant", "c"],
@@ -82,4 +94,10 @@ OPERATOR_NAMES = {INTEGER: ["integer"],
                   # SAFE_POWER: ["safe power", "safe pow"],
                   SINH: ["sineh", "sinh"],
                   COSH: ["cosineh", "cosh"],
-                  TRANSPOSE: ["transpose", "T"]}
+                  TRANSPOSE: ["transpose", "T"],
+                  ARCTAN: ["arctan", "atan", "invtan", "inverse tangent",
+                           "inverse tan"],
+                  ARCCOS: ["arccos", "acos", "invcos", "inverse cosgent",
+                           "inverse cos"],
+                  CROSS: ["cross", "cross product"],
+                  NORMALIZE: ["normalize"]}
