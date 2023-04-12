@@ -22,26 +22,16 @@ STACK_SIZE = 10
 
 
 def get_input_hill_matrices(F, G, H):
-    main_diagonal = np.array([H + G, F + H, F + G])
-    second_diagonal = np.array([-H, 0])
-    third_diagonal = np.array([0])
-
-    p_hill = np.diagflat(main_diagonal) + np.diagflat(second_diagonal, 1) \
-             + np.diagflat(second_diagonal, -1) + np.diagflat(third_diagonal, 2) \
-             + np.diagflat(third_diagonal, -2)
-
+    p_hill = np.array([[H + G, -H, -G],
+                       [-H, F + H, -F],
+                       [-G, -F, F + G]])
     return p_hill
 
 
 def get_von_mises_p(yield_stress):
-    main_diagonal = np.array([1, 1, 1])
-    second_diagonal = np.array([-0.5, 0])
-    third_diagonal = np.array([0])
-
-    p_vm = np.diagflat(main_diagonal) + np.diagflat(second_diagonal, 1) \
-           + np.diagflat(second_diagonal, -1) + np.diagflat(third_diagonal, 2) \
-           + np.diagflat(third_diagonal, -2)
-
+    p_vm = np.array([[1, -0.5, -0.5],
+                     [-0.5, 1, -0.5],
+                     [-0.5, -0.5, 1]])
     return 1/yield_stress**2 * p_vm
 
 
