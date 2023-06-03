@@ -3,6 +3,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=missing-docstring
 import numpy as np
+import torch
 
 from bingo.evolutionary_algorithms.age_fitness import AgeFitnessEA
 from bingo.evolutionary_optimizers.serial_archipelago import SerialArchipelago
@@ -19,8 +20,6 @@ from bingo.symbolic_regression.explicit_regression_md import ExplicitTrainingDat
 POP_SIZE = 100
 STACK_SIZE = 10
 
-np.random.seed(2)
-
 
 def equation_eval(x):
     C_0 = np.array([[1, 2, 3],
@@ -32,12 +31,14 @@ def equation_eval(x):
     return C_0 @ x[0] + C_1
 
 
-def execute_generational_steps():
-    np.random.seed(2)
+def main(use_pytorch):
     n_points = 100
     x_0 = np.random.rand(n_points, 3, 3)
     x = [x_0]
+
     y = equation_eval(x)
+    if use_pytorch:
+        x = [torch.from_numpy(x_0).double()]
     training_data = ExplicitTrainingDataMD(x, y)
 
     x_dims = [np.shape(_x[0]) for _x in x]
@@ -52,7 +53,8 @@ def execute_generational_steps():
     crossover = AGraphCrossoverMD()
     mutation = AGraphMutationMD(component_generator, command_probability=0.333, node_probability=0.333,
                                 parameter_probability=0.333, prune_probability=0.0, fork_probability=0.0)
-    agraph_generator = AGraphGeneratorMD(STACK_SIZE, component_generator, x_dims, y_dim, use_simplification=False)
+    agraph_generator = AGraphGeneratorMD(STACK_SIZE, component_generator, x_dims, y_dim, use_simplification=False,
+                                         use_pytorch=use_pytorch)
 
     fitness = ExplicitRegressionMD(training_data=training_data)
     local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='lm', param_init_bounds=[0, 0])
@@ -72,15 +74,15 @@ def execute_generational_steps():
     print(best_indiv.get_formatted_string("console"))
     print(best_indiv.fitness)
 
-    test_x = [np.array([[[-1, 0, 1],
-                         [-2, -1, 0],
-                         [-3, -2, -1]]])]
-    print(best_indiv.evaluate_equation_at(test_x))
-
-
-def main():
-    execute_generational_steps()
+    # test_x = [np.array([[[-1, 0, 1],
+    #                      [-2, -1, 0],
+    #                      [-3, -2, -1]]])]
+    # print(best_indiv.evaluate_equation_at(test_x))
 
 
 if __name__ == '__main__':
-    main()
+    import random
+    random.seed(7)
+    np.random.seed(7)
+
+    main(use_pytorch=True)

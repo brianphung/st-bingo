@@ -403,7 +403,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         return dist
 
     def __deepcopy__(self, memodict=None):  # TODO test
-        duplicate = AGraphMD(self.input_dims, self.output_dim)
+        duplicate = self.__class__(self.input_dims, self.output_dim)
         self._copy_agraph_values_to_new_graph(duplicate)
         return duplicate
 

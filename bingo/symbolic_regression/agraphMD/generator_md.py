@@ -6,6 +6,7 @@ graph individuals.
 import numpy as np
 
 from .agraphMD import AGraphMD
+from .pytorch_agraph_md import PytorchAGraphMD
 from .validation_backend import validation_backend
 from ...chromosomes.generator import Generator
 from ...util.argument_validation import argument_validation
@@ -22,13 +23,17 @@ class AGraphGeneratorMD(Generator):
                           Generator of stack components of agraphs
     """
     @argument_validation(agraph_size={">=": 1})
-    def __init__(self, agraph_size, component_generator, input_dims, output_dim, use_simplification=False):
+    def __init__(self, agraph_size, component_generator, input_dims, output_dim, use_simplification=False,
+                 use_pytorch=False):
         self.agraph_size = agraph_size
         self.component_generator = component_generator
         self._input_dims = input_dims
         self._output_dim = output_dim
         self._use_simplification = use_simplification
+
         self._backend_generator_function = self._python_generator_function
+        if use_pytorch:
+            self._backend_generator_function = self._pytorch_generator_function
 
     def __call__(self):
         """Generates random agraph individual.
@@ -46,6 +51,11 @@ class AGraphGeneratorMD(Generator):
         return AGraphMD(input_dims=self._input_dims,
                         output_dim=self._output_dim,
                         use_simplification=self._use_simplification)
+
+    def _pytorch_generator_function(self):
+        return PytorchAGraphMD(input_dims=self._input_dims,
+                               output_dim=self._output_dim,
+                               use_simplification=self._use_simplification)
 
     def _create_individual(self):
         attempts = 0
