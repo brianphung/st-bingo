@@ -11,7 +11,7 @@ import numpy as np
 # Fitness metric functions, outside of FitnessFunction for use in GradientMixin
 def mean_absolute_error(vector):
     """Calculate the mean absolute error of an error vector"""
-    return np.mean(np.abs(vector))
+    return np.abs(vector).mean()
 
 
 def root_mean_squared_error(vector):
