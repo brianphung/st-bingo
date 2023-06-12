@@ -199,7 +199,13 @@ class ContinuousLocalOptimizationMD(FitnessFunction):
             The fitness of the invdividual
         """
         if individual.needs_local_optimization():
-            self._optimize_params(individual)
+            try:
+                self._optimize_params(individual)
+            except TypeError:
+                old_alg = self._algorithm
+                self._algorithm = "BFGS"
+                self._optimize_params(individual)
+                self._algorithm = old_alg
         return self._evaluate_fitness(individual)
 
     @staticmethod
@@ -233,40 +239,35 @@ class ContinuousLocalOptimizationMD(FitnessFunction):
         return self._fitness_function(individual)
 
     def _run_algorithm_for_optimization(self, sub_routine, individual, params):
-        try:
-            if self._algorithm in ROOT_SET:
-                if isinstance(self._fitness_function, VectorGradientMixin) \
-                        and self._algorithm in JACOBIAN_SET:
-                    optimize_result = optimize.root(
-                        sub_routine, params,
-                        args=(individual, ),
-                        jac=lambda x, indv: self._fitness_function.get_fitness_vector_and_jacobian(indv)[1],  # pylint: disable=line-too-long
-                        method=self._algorithm,
-                        **self._optimization_options)
-                else:
-                    optimize_result = optimize.root(sub_routine, params,
-                                                    args=(individual),
-                                                    method=self._algorithm,
-                                                    **self._optimization_options)
+        if self._algorithm in ROOT_SET:
+            if isinstance(self._fitness_function, VectorGradientMixin) \
+                    and self._algorithm in JACOBIAN_SET:
+                optimize_result = optimize.root(
+                    sub_routine, params,
+                    args=(individual,),
+                    jac=lambda x, indv: self._fitness_function.get_fitness_vector_and_jacobian(indv)[1],  # pylint: disable=line-too-long
+                    method=self._algorithm,
+                    **self._optimization_options)
             else:
-                if isinstance(self._fitness_function, GradientMixin) \
-                        and self._algorithm in JACOBIAN_SET:
-                    optimize_result = optimize.minimize(
-                        sub_routine, params,
-                        args=(individual, ),
-                        jac=lambda x, indv: self._fitness_function.get_fitness_and_gradient(indv)[1],  # pylint: disable=line-too-long
-                        method=self._algorithm,
-                        **self._optimization_options)
-                else:
-                    optimize_result = optimize.minimize(sub_routine, params,
-                                                        args=(individual, ),
-                                                        method=self._algorithm,
-                                                        **self._optimization_options)  # pylint: disable=line-too-long
-            return optimize_result.x
-        except TypeError:
-            individual._fitness = np.inf
-            individual._fit_set = True
-            return params
+                optimize_result = optimize.root(sub_routine, params,
+                                                args=(individual),
+                                                method=self._algorithm,
+                                                **self._optimization_options)
+        else:
+            if isinstance(self._fitness_function, GradientMixin) \
+                    and self._algorithm in JACOBIAN_SET:
+                optimize_result = optimize.minimize(
+                    sub_routine, params,
+                    args=(individual,),
+                    jac=lambda x, indv: self._fitness_function.get_fitness_and_gradient(indv)[1],  # pylint: disable=line-too-long
+                    method=self._algorithm,
+                    **self._optimization_options)
+            else:
+                optimize_result = optimize.minimize(sub_routine, params,
+                                                    args=(individual,),
+                                                    method=self._algorithm,
+                                                    **self._optimization_options)  # pylint: disable=line-too-long
+        return optimize_result.x
 
     def _evaluate_fitness(self, individual):
         return self._fitness_function(individual)
