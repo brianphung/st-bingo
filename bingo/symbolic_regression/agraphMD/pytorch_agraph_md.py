@@ -5,37 +5,38 @@ import torch
 
 from .agraphMD import AGraphMD
 
-import torch_eval as evaluation_backend
+try:
+    from bingocpp import pytorch_evaluation_backend as evaluation_backend
+except ImportError:
+    from .pytorch_evaluation_backend import evaluation_backend
 
 LOGGER = logging.getLogger(__name__)
 
 
 class PytorchAGraphMD(AGraphMD):
-    @staticmethod
-    def _get_torch_const(constants):
-        with torch.no_grad():
-            new_constants = []
-            for constant in constants:
-                if constant.shape == ():
-                    constant = constant[None, None]
-                extended_constant = torch.tensor(constant[None, :]).double()
-                new_constants.append(extended_constant)
-            return new_constants
-
     def evaluate_equation_at(self, x):
         if self._modified:
             self._update()
         try:
-            eval = evaluation_backend.evaluate(
+            return evaluation_backend.evaluate(
                 self._simplified_command_array, x,
-                self._get_torch_const(self._simplified_constants)).squeeze()
-            if len(eval) != x.size(1):
-                eval = eval.expand(x.size(1), *([-1] * eval.dim()))
-            return eval
+                self._simplified_constants)
         except (ArithmeticError, OverflowError, ValueError,
                 FloatingPointError) as err:
             LOGGER.warning("%s in stack evaluation", err)
             return torch.full((len(x[0]), 1), float("nan")).detach().numpy()
+
+    def evaluate_equation_at_no_detach(self, x):
+        if self._modified:
+            self._update()
+        try:
+            return evaluation_backend.evaluate_no_detach(
+                self._simplified_command_array, x,
+                self._simplified_constants)
+        except (ArithmeticError, OverflowError, ValueError,
+                FloatingPointError) as err:
+            LOGGER.warning("%s in stack evaluation", err)
+            return torch.full((len(x[0]), 1), float("nan"))
 
     def evaluate_equation_with_x_gradient_at(self, x):
         """Evaluate `AGraph` and get its derivatives.

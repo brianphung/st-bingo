@@ -158,10 +158,13 @@ class EvolutionaryOptimizer(metaclass=ABCMeta):
 
     def _log_optimization(self, start_time):
         test_fitness = None
+        best_individual = self.get_best_individual()
         if self._test_function is not None:
-            test_fitness = self._test_function(self.get_best_individual())
-        if self.generational_age % 10 == 0:
-            print(f"Generation: {self.generational_age}, Best fitness: {self._best_fitness}")
+            test_fitness = self._test_function(best_individual)
+        if self.generational_age % 10 == 1:
+            print(f"Generation: {self.generational_age}, Best fitness: \033[94m{self._best_fitness}\033[0m, Best indv: {best_individual}")
+            print(f"Best individual's command array:", repr(best_individual.command_array), " best individual's constants:", repr(best_individual.constants))
+        # print(f"Generation: {self.generational_age}, Best fitness: {self._best_fitness}, Best indv: {self.get_best_individual()}")
         log_string = "Generation: %d \t " % self.generational_age
         elapsed_time = datetime.now() - start_time
         log_string += "Elapsed time: %s \t " % elapsed_time

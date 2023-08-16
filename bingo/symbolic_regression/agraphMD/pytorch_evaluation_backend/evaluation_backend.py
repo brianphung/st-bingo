@@ -16,7 +16,19 @@ def _get_torch_const(constants, data_len):
     with torch.no_grad():
         new_constants = []
         for constant in constants:
-            new_constants.append(torch.from_numpy(constant).double().expand(data_len, *constant.shape))
+            was_scalar = False
+            try:
+                if constant.shape == ():
+                    constant = constant[None, None]
+                    was_scalar = True
+            except AttributeError:  # constant is a float
+                constant = np.array([[[constant]]])
+                was_scalar = True
+            extended_constant = torch.tensor(constant).double()
+            extended_constant = extended_constant[None, :].expand(data_len, *([-1] * len(extended_constant.size())))
+            if was_scalar:
+                extended_constant = extended_constant.flatten()
+            new_constants.append(extended_constant)
         return new_constants
 
 
@@ -43,8 +55,14 @@ def evaluate(pytorch_repr, x, constants, final=True):
         constants = _get_torch_const(constants, x[0].size(0))
     return_eval = get_pytorch_repr(pytorch_repr)(x, constants)
     if final:
+        # return return_eval.detach().numpy()[:, :, 0]
         return return_eval.detach().numpy()
     return return_eval
+
+
+def evaluate_no_detach(pytorch_repr, x, constants):
+    constants = _get_torch_const(constants, x[0].size(0))
+    return evaluate(pytorch_repr, x, constants, final=False)
 
 
 def evaluate_with_derivative(pytorch_repr, x, constants, wrt_param_x_or_c):
@@ -75,7 +93,10 @@ def evaluate_with_derivative(pytorch_repr, x, constants, wrt_param_x_or_c):
     if isinstance(x, np.ndarray):
         x = torch.from_numpy(x.T).double()
     constants = _get_torch_const(constants, x[0].size(0))
+    # x = x[:, :, None].expand(-1, -1, constants.shape[0])
     eval, deriv = _evaluate_with_derivative(pytorch_repr, x, constants, wrt_param_x_or_c)
+
+    # return eval[:, :, 0], deriv
     return eval, deriv
 
 
@@ -83,17 +104,42 @@ def _evaluate_with_derivative(pytorch_repr, x, constants, wrt_param_x_or_c):
     inputs = x
     if not wrt_param_x_or_c:  # c
         inputs = constants
-    inputs.requires_grad = True
+
+    if isinstance(inputs, list):
+        return _evaluate_with_derivative_list(pytorch_repr, x, constants, inputs)
+    else:
+        inputs.requires_grad = True
+
+        eval = evaluate(pytorch_repr, x, constants, final=False)
+
+        if eval.requires_grad:
+            derivative = grad(outputs=eval.sum(), inputs=inputs, create_graph=True, retain_graph=True, allow_unused=False)[0]
+        if derivative is None:
+            derivative = torch.zeros((inputs.shape[0], eval.shape[0]))
+        return eval.detach().numpy(), derivative.detach().numpy()
+
+
+def _evaluate_with_derivative_list(pytorch_repr, x, constants, inputs):
+    for input in inputs:
+        input.grad = None  # IMPORTANT TO RESET THIS IF USING .sum().backward() rather than grad() !!!!!!!
+        input.requires_grad = True
 
     eval = evaluate(pytorch_repr, x, constants, final=False)
 
     if eval.requires_grad:
-        derivative = grad(outputs=eval.sum(), inputs=inputs, create_graph=True, retain_graph=True, allow_unused=False)[0]
-    else:
-        derivative = None
-    if derivative is None:
-        derivative = torch.zeros((inputs.shape[0], eval.shape[0]))
-    return eval.detach().numpy(), derivative.T.detach().numpy()
+        eval.sum().backward()
+
+    full_derivative = []
+    for input in inputs:
+        input_derivative = input.grad
+        if input_derivative is None:
+            try:
+                input_derivative = torch.zeros((eval.shape[0], input.shape[1]))
+            except IndexError:
+                input_derivative = torch.zeros((eval.shape[0]))
+        full_derivative.append(input_derivative.detach().numpy())
+
+    return eval.detach().numpy(), full_derivative
 
 
 def evaluate_with_partials(pytorch_repr, x, constants, partial_order):

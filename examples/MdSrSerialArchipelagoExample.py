@@ -1,4 +1,3 @@
-
 # Ignoring some linting rules in tests
 # pylint: disable=redefined-outer-name
 # pylint: disable=missing-docstring
@@ -35,14 +34,15 @@ def main(use_pytorch):
     n_points = 100
     x_0 = np.random.rand(n_points, 3, 3)
     x = [x_0]
+    x_dims = [np.shape(_x[0]) for _x in x]
 
     y = equation_eval(x)
+    y_dim = y[0].shape
     if use_pytorch:
-        x = [torch.from_numpy(x_0).double()]
+        x = torch.from_numpy(x_0[None, :]).double()
+        # y = torch.from_numpy(y).double()
     training_data = ExplicitTrainingDataMD(x, y)
 
-    x_dims = [np.shape(_x[0]) for _x in x]
-    y_dim = y[0].shape
     print("Dimensions of X variables:", x_dims)
     print("Dimension of output:", y_dim)
 
@@ -51,8 +51,7 @@ def main(use_pytorch):
     component_generator.add_operator("*")
 
     crossover = AGraphCrossoverMD()
-    mutation = AGraphMutationMD(component_generator, command_probability=0.333, node_probability=0.333,
-                                parameter_probability=0.333, prune_probability=0.0, fork_probability=0.0)
+    mutation = AGraphMutationMD(component_generator)
     agraph_generator = AGraphGeneratorMD(STACK_SIZE, component_generator, x_dims, y_dim, use_simplification=False,
                                          use_pytorch=use_pytorch)
 
@@ -64,13 +63,14 @@ def main(use_pytorch):
                       mutation, 0.4, 0.4, POP_SIZE)
 
     island = Island(ea, agraph_generator, POP_SIZE)
-    archipelago = SerialArchipelago(island)
+    # archipelago = SerialArchipelago(island)
 
-    opt_result = archipelago.evolve_until_convergence(max_generations=500,
-                                                      fitness_threshold=1.0e-10)
+    opt_result = island.evolve_until_convergence(max_generations=500,
+                                                      fitness_threshold=1.0e-5)
 
+    print(local_opt_fitness.eval_count)
     print(opt_result)
-    best_indiv = archipelago.get_best_individual()
+    best_indiv = island.get_best_individual()
     print(best_indiv.get_formatted_string("console"))
     print(best_indiv.fitness)
 
@@ -85,4 +85,8 @@ if __name__ == '__main__':
     random.seed(7)
     np.random.seed(7)
 
+    import time
+    time_1 = time.perf_counter_ns()
     main(use_pytorch=True)
+    time_2 = time.perf_counter_ns()
+    print((time_2 - time_1) / 1e9)

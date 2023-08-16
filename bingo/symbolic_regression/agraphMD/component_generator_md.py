@@ -39,6 +39,8 @@ class ComponentGeneratorMD:
                          constant_probability={">=": 0.0, "<=": 1.0})
     def __init__(self, input_x_dimensions=None,
                  possible_dims=None,
+                 possible_dim_weights=None,
+                 x_weights=None,
                  num_initial_load_statements=1,
                  terminal_probability=0.1,
                  constant_probability=None):
@@ -48,6 +50,8 @@ class ComponentGeneratorMD:
             input_x_dimensions = []
         self.input_x_dimensions = np.array(input_x_dimensions)
         self.possible_dims = possible_dims
+        self.possible_dim_weights = possible_dim_weights
+        self.x_weights = x_weights
         self.num_x = len(input_x_dimensions)
         self._num_initial_load_statements = num_initial_load_statements
 
@@ -196,7 +200,12 @@ class ComponentGeneratorMD:
                 dim2 = np.random.randint(1, max_dim + 1)
             return dim1, dim2
         else:
-            return self.possible_dims[np.random.randint(len(self.possible_dims))]
+            if self.possible_dim_weights:
+                possible_idx = np.arange(len(self.possible_dims))
+                chosen_idx = np.random.choice(possible_idx, p=self.possible_dim_weights)
+                return self.possible_dims[chosen_idx]
+            else:
+                return self.possible_dims[np.random.randint(len(self.possible_dims))]
 
     def random_terminal(self):
         """Get a random terminal
@@ -224,7 +233,10 @@ class ComponentGeneratorMD:
             parameter to be used in a terminal command
         """
         if terminal_number == 0:
-            param = np.random.randint(self.num_x)
+            if self.x_weights:
+                param = np.random.choice(np.arange(self.num_x), p=self.x_weights)
+            else:
+                param = np.random.randint(self.num_x)
         else:
             param = -1
         return param

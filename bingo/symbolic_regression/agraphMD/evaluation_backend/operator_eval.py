@@ -12,8 +12,8 @@ import numpy as np
 
 from bingo.symbolic_regression.agraphMD.operator_definitions \
     import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, \
-    SIN, COS, EXPONENTIAL, LOGARITHM, ABS, SQRT, SINH, COSH, TRANSPOSE, ARCTAN, \
-    ARCCOS, CROSS, NORMALIZE
+    DIVISION, SIN, COS, EXPONENTIAL, LOGARITHM, ABS, SQRT, SINH, COSH, TRANSPOSE,\
+    ARCTAN, ARCCOS, CROSS, NORMALIZE
 
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -87,6 +87,12 @@ class _MultiplyForwardEval(_ForwardEvalBase):
             return np.matmul(fe_1, fe_2)
 
         # TODO reshape not necessary if scalars are in (1, 1) form
+
+
+class _DivisionForwardEval(_ForwardEvalBase):
+    @staticmethod
+    def evaluate(param1, param2, param3, x, constants, forward_eval):
+        return forward_eval[param1] / forward_eval[param2]
 
 
 class _SinForwardEval(_ForwardEvalBase):
@@ -197,6 +203,7 @@ FORWARD_EVAL_MAP = {INTEGER: _IntegerForwardEval.evaluate,
                     ADDITION: _AddForwardEval.evaluate,
                     SUBTRACTION: _SubtractForwardEval.evaluate,
                     MULTIPLICATION: _MultiplyForwardEval.evaluate,
+                    DIVISION: _DivisionForwardEval.evaluate,
                     SIN: _SinForwardEval.evaluate,
                     COS: _CosForwardEval.evaluate,
                     EXPONENTIAL: _ExpForwardEval.evaluate,

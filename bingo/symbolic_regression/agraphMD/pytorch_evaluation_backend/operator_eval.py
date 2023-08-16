@@ -5,10 +5,10 @@ from bingo.symbolic_regression.agraphMD.operator_definitions import *
 
 # Integer value
 def _integer_forward_eval(param1, param2, param3, x, _constants, _forwardeval):
-    if (param2, param3) == (0, 0):
-        return float(param1)
-    else:
-        return torch.ones(param2, param3) * float(param1)
+    returned_integer = torch.tensor(float(param1))
+    if (param2, param3) != (0, 0):
+        returned_integer *= torch.ones(param2, param3)
+    return torch.unsqueeze(returned_integer, 0).expand(len(x[0]), *([-1]*returned_integer.ndim))
 
 
 # Load x column
@@ -22,13 +22,43 @@ def _loadc_forward_eval(param1, _param2, param3, x, constants, _forwardeval):
 
 
 # Addition
+# def _add_forward_eval(param1, param2, param3, _x, _constants, forward_eval):
+#     arg1 = forward_eval[param1]
+#     arg2 = forward_eval[param2]
+#     arg1_one_by_one = (arg1.size()[1:] == (1, 1))
+#     arg2_one_by_one = (arg2.size()[1:] == (1, 1))
+#     if arg1_one_by_one and not arg2_one_by_one:
+#         return forward_eval[param1] + forward_eval[param2].view(-1, 1, 1)
+#     elif not arg1_one_by_one and arg2_one_by_one:
+#         return forward_eval[param1].view(-1, 1, 1) + forward_eval[param2]
+#     else:
+#         return forward_eval[param1] + forward_eval[param2]
+
 def _add_forward_eval(param1, param2, param3, _x, _constants, forward_eval):
-    return forward_eval[param1] + forward_eval[param2]
+    arg1 = forward_eval[param1]
+    arg2 = forward_eval[param2]
+    arg1_dim = arg1.dim()
+    arg2_dim = arg2.dim()
+    if (arg1_dim == arg2_dim):
+        return arg1 + arg2
+    elif (arg1_dim == 1) and (arg2_dim == 3):
+        return arg1.view(-1, 1, 1) + arg2
+    else:
+        return arg1 + arg2.view(-1, 1, 1)
 
 
 # Subtraction
 def _subtract_forward_eval(param1, param2, param3, _x, _constants, forward_eval):
-    return forward_eval[param1] - forward_eval[param2]
+    arg1 = forward_eval[param1]
+    arg2 = forward_eval[param2]
+    arg1_dim = arg1.dim()
+    arg2_dim = arg2.dim()
+    if (arg1_dim == arg2_dim):
+        return arg1 - arg2
+    elif (arg1_dim == 1) and (arg2_dim == 3):
+        return arg1.view(-1, 1, 1) - arg2
+    else:
+        return arg1 - arg2.view(-1, 1, 1)
 
 
 # Multiplication
@@ -41,9 +71,14 @@ def _multiply_forward_eval(param1, param2, param3, _x, _constants, forward_eval)
     len_size_2 = len(fe_2.size())
     if len_size_1 in {1, 2} or len_size_2 in {1, 2}:
         if len_size_1 == 1 and not len_size_2 == 1:
-            return fe_1[:, None, None] * fe_2
+            # return fe_1[:, None, None] * fe_2
+            return fe_1.view(-1, 1, 1) * fe_2
         if len_size_2 == 1 and not len_size_1 == 1:
-            return fe_1 * fe_2[:, None, None]
+            # return fe_1 * fe_2[:, None, None]
+            return fe_1 * fe_2.view(-1, 1, 1)
+        return fe_1 * fe_2
+
+    if fe_1.size()[1:] == (1, 1) or fe_2.size()[1:] == (1, 1):
         return fe_1 * fe_2
     return fe_1 @ fe_2
 
@@ -104,10 +139,11 @@ def _sqrt_forward_eval(param1, _param2, param3, _x, _constants, forward_eval):
 
 
 def _transpose_forward_eval(param1, param2, param3, x, constants, forward_eval):
-    if len(forward_eval[param1].size()) == 3:
-        return torch.transpose(forward_eval[param1], 1, 2)
+    dim = forward_eval[param1].dim()
+    if dim == 1:
+        return forward_eval[param1]
     else:
-        return forward_eval[param1].T
+        return forward_eval[param1].mT
 
 
 def _arctan_forward_eval(param1, param2, param3, x, constants, forward_eval):
@@ -154,6 +190,7 @@ FORWARD_EVAL_MAP = {INTEGER: _integer_forward_eval,
                     ADDITION: _add_forward_eval,
                     SUBTRACTION: _subtract_forward_eval,
                     MULTIPLICATION: _multiply_forward_eval,
+                    DIVISION: _divide_forward_eval,
                     SIN: _sin_forward_eval,
                     COS: _cos_forward_eval,
                     SINH: _sinh_forward_eval,

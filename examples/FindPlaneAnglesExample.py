@@ -47,9 +47,6 @@ def execute_generational_steps():
     component_generator = ComponentGeneratorMD(x_dims)
     component_generator.add_operator("+")
     component_generator.add_operator("*")
-    component_generator.add_operator("arccos")
-    component_generator.add_operator("cross")
-    component_generator.add_operator("normalize")
 
     crossover = AGraphCrossoverMD()
     mutation = AGraphMutationMD(component_generator, command_probability=0.333, node_probability=0.333,
@@ -64,13 +61,19 @@ def execute_generational_steps():
                       mutation, 0.4, 0.4, POP_SIZE)
 
     island = Island(ea, agraph_generator, POP_SIZE)
-    archipelago = SerialArchipelago(island)
+    # archipelago = SerialArchipelago(island)
 
-    opt_result = archipelago.evolve_until_convergence(max_generations=100,
+    island.evolve(1)
+
+    component_generator.add_operator("arccos")
+    component_generator.add_operator("cross")
+    component_generator.add_operator("normalize")
+
+    opt_result = island.evolve_until_convergence(max_generations=500,
                                                       fitness_threshold=1.0e-10)
 
     print(opt_result)
-    best_indiv = archipelago.get_best_individual()
+    best_indiv = island.get_best_individual()
     print(best_indiv.get_formatted_string("console"))
     print(best_indiv.fitness)
 

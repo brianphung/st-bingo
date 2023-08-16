@@ -46,9 +46,9 @@ class Island(EvolutionaryOptimizer):
                  hall_of_fame=None):
         super().__init__(hall_of_fame)
         self._generator = generator
-        print("generating population")
+        print("Generating population")
         self.population = [generator() for _ in range(population_size)]
-        print("finished generating population")
+        print("Finished generating population")
         self._ea = evolution_algorithm
         self._population_size = population_size
 

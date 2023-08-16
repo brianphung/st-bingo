@@ -217,9 +217,35 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
             self._update()
         return sum([len(np.array(constant).flatten()) for constant in self._simplified_constants])
 
-    def set_local_optimization_params(self, flattened_params, shapes):  # TODO make shapes optional
+    def set_local_optimization_params(self, flattened_params, shapes=[(3, 3)]):  # TODO make shapes optional
         # TODO testing to make sure that set constant = desired dimensions from cmd_ar
         # TODO documentation
+        constants = []
+        prev_i = 0
+        for shape in shapes:
+            if shape == (0, 0):
+                shape = ()
+                len_const = 1
+            elif shape == ():
+                len_const = 1
+            else:
+                len_const = shape[0] * shape[1]
+            next_i = prev_i + len_const
+
+            constants.append(np.array(flattened_params[prev_i:next_i]).reshape(shape))
+            prev_i = next_i
+
+        self._simplified_constants = tuple(constants)
+        self._needs_opt = False
+
+    @staticmethod
+    def _get_symmetric_matrix(upper_triangular_section, shape):
+        sym_mat = np.zeros(shape)
+        sym_mat[np.triu_indices(shape[0])] = upper_triangular_section
+        sym_mat += sym_mat.T - np.diag(np.diag(sym_mat))
+        return sym_mat
+
+    def set_symmetric_constants(self, flattened_upper_triangular, shapes):
         constants = []
         prev_i = 0
         for shape in shapes:
@@ -229,7 +255,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
                 len_const = shape[0] * shape[1]
             next_i = prev_i + len_const
 
-            constants.append(np.array(flattened_params[prev_i:next_i]).reshape(shape))
+            constants.append(self._get_symmetric_matrix(flattened_upper_triangular[prev_i:next_i], shape))
             prev_i = next_i
 
         self._simplified_constants = tuple(constants)

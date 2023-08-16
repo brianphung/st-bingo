@@ -61,9 +61,10 @@ class AGraphGeneratorMD(Generator):
         attempts = 0
         individual = self._generate_potential_individual()
         while not validation_backend.validate_individual(individual):
-            if attempts >= 100:
-                raise RuntimeError("Could not generate valid agraph within 100 attempts")  # TODO test
+            if attempts >= 10000:
+                raise RuntimeError("Could not generate valid agraph within 10000 attempts")  # TODO test
             individual = self._generate_potential_individual()
+            attempts += 1
         return individual
 
     def _generate_potential_individual(self):

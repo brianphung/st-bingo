@@ -72,6 +72,13 @@ class _MultiplyValidate(_ValidateBase):
             return False, (0, 0)
 
 
+class _DivisionValidate(_ValidateBase):
+    @staticmethod
+    def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
+        dim_1, dim_2 = tuple(dimensions[param1]), tuple(dimensions[param2])
+        return (dim_1 == (0, 0) and dim_2 == (0, 0)) or (dim_1 == (1, 1) and dim_2 == (1, 1)), dim_1
+
+
 class _TransposeValidate(_ValidateBase):
     @staticmethod
     def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
@@ -116,6 +123,7 @@ VALIDATE_MAP = {INTEGER: _IntegerValidate.validate_op,
                 ADDITION: _AdditionLikeValidate.validate_op,
                 SUBTRACTION: _AdditionLikeValidate.validate_op,
                 MULTIPLICATION: _MultiplyValidate.validate_op,
+                DIVISION: _DivisionValidate.validate_op,
                 SIN: _ArityOneOperatorWithNoShapeChange.validate_op,
                 COS: _ArityOneOperatorWithNoShapeChange.validate_op,
                 EXPONENTIAL: _ArityOneOperatorWithNoShapeChange.validate_op,
