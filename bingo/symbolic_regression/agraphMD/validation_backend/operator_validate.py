@@ -41,7 +41,8 @@ class _LoadConstantValidate(_ValidateBase):
                        constant_dims[param1] == dims_from_command, dims_from_command
             else:
                 return param2 >= 0 and param3 >= 0 and \
-                       constant_dims[param1] == (), dims_from_command
+                       constant_dims[param1] == () or \
+                       constant_dims[param1] == (0, 0), dims_from_command
         except IndexError:
             return False, dims_from_command
 
@@ -72,7 +73,7 @@ class _MultiplyValidate(_ValidateBase):
             return False, (0, 0)
 
 
-class _DivisionValidate(_ValidateBase):
+class _ScalarOnlyValidate(_ValidateBase):
     @staticmethod
     def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
         dim_1, dim_2 = tuple(dimensions[param1]), tuple(dimensions[param2])
@@ -123,11 +124,12 @@ VALIDATE_MAP = {INTEGER: _IntegerValidate.validate_op,
                 ADDITION: _AdditionLikeValidate.validate_op,
                 SUBTRACTION: _AdditionLikeValidate.validate_op,
                 MULTIPLICATION: _MultiplyValidate.validate_op,
-                DIVISION: _DivisionValidate.validate_op,
+                DIVISION: _ScalarOnlyValidate.validate_op,
                 SIN: _ArityOneOperatorWithNoShapeChange.validate_op,
                 COS: _ArityOneOperatorWithNoShapeChange.validate_op,
                 EXPONENTIAL: _ArityOneOperatorWithNoShapeChange.validate_op,
                 LOGARITHM: _ArityOneOperatorWithNoShapeChange.validate_op,
+                POWER: _ScalarOnlyValidate.validate_op,
                 ABS: _ArityOneOperatorWithNoShapeChange.validate_op,
                 SQRT: _ArityOneOperatorWithNoShapeChange.validate_op,
                 SINH: _ArityOneOperatorWithNoShapeChange.validate_op,

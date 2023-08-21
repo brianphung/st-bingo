@@ -5,6 +5,9 @@ from bingo.symbolic_regression.agraphMD.operator_definitions import *
 from bingo.symbolic_regression.agraphMD.validation_backend.validation_backend import validate
 
 
+# TODO add testing for new matrix operators (e.g., division, normalize, power, etc.)
+# TODO add testing for different scalar types
+
 @pytest.fixture
 def complex_stack():
     return np.array([[VARIABLE, 0, 3, 1],        # 0, 3x1

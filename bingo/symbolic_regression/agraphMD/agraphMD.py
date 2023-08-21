@@ -392,11 +392,15 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
             Equation in specified form
         """
         if raw:
-            return get_formatted_string(format_, self._command_array[:, :-1], tuple())
+            return get_formatted_string(format_, self._command_array,
+                                        tuple(), self.input_dims,
+                                        self.constant_shapes)
         if self._modified:
             self._update()
-        return get_formatted_string(format_, self._simplified_command_array[:, :-1],
-                                    self._simplified_constants)
+        return get_formatted_string(format_,
+                                    self._simplified_command_array,
+                                    self._simplified_constants, self.input_dims,
+                                    self.simplified_constant_shapes)
 
     def get_complexity(self):
         """Calculate complexity of agraph equation.

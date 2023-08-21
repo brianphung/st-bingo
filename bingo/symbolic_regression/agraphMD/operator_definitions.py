@@ -33,6 +33,10 @@ ARCCOS = 18
 CROSS = 20
 NORMALIZE = 21
 
+# (David Randall) Note: Not for use in stacks, purely for string formatting
+#   see normal mult where matrix multiplication can be performed
+MATRIX_MULT = 99
+
 IS_ARITY_2_MAP = {INTEGER: False,
                   VARIABLE: False,
                   CONSTANT: False,
@@ -54,7 +58,8 @@ IS_ARITY_2_MAP = {INTEGER: False,
                   ARCTAN: False,
                   ARCCOS: False,
                   CROSS: True,
-                  NORMALIZE: False}
+                  NORMALIZE: False,
+                  MATRIX_MULT: True}
 IS_TERMINAL_MAP = {INTEGER: True,
                    VARIABLE: True,
                    CONSTANT: True,
@@ -76,7 +81,8 @@ IS_TERMINAL_MAP = {INTEGER: True,
                    ARCTAN: False,
                    ARCCOS: False,
                    CROSS: False,
-                   NORMALIZE: False}
+                   NORMALIZE: False,
+                   MATRIX_MULT: False}
 OPERATOR_NAMES = {INTEGER: ["integer"],
                   VARIABLE: ["load", "x"],
                   CONSTANT: ["constant", "c"],
@@ -100,4 +106,5 @@ OPERATOR_NAMES = {INTEGER: ["integer"],
                   ARCCOS: ["arccos", "acos", "invcos", "inverse cosgent",
                            "inverse cos"],
                   CROSS: ["cross", "cross product"],
-                  NORMALIZE: ["normalize"]}
+                  NORMALIZE: ["normalize"],
+                  MATRIX_MULT: ["matrix multiplication", "@"]}
