@@ -7,18 +7,14 @@ def P_indv(eps):
     X_0 = eps
     from numpy import array, sin, cos
 
-    P = cos(cos(((sin((array([[-0.67662144,  0.7613563 ],
-                              [ 0.26741559, -0.59678159]]))*(X_0)))*(X_0 + X_0))@(array([[-631.30903812, -153.5812359 ],
-                                                                                         [-386.65304506, -265.4762436 ]])) + array([[-0.67662144,  0.7613563 ],
-                                                                                                                                    [ 0.26741559, -0.59678159]])) + array([[ 1.24679185, -1.53826878],
-                                                                                                                                                                           [ 1.84911831,  1.16704097]]) + array([[-0.67662144,  0.7613563 ],
-                                                                                                                                                                                                                 [ 0.26741559, -0.59678159]]))
-
+    P = array([[-8.82173967e-03, -3.08191511e+00, -4.56283502e+00],
+                [ 3.09082937e+00, -9.44079206e-03, -1.50211175e+02],
+                [ 4.57255208e+00,  1.50220639e+02, -9.83244993e-03]])
     return P
 
 
 if __name__ == "__main__":
-    original_name = "vpsc_evo_17_data_2d_transpose_implicit_format"
+    original_name = "vpsc_evo_17_data_3d_points_transpose_implicit_format"
     data = np.loadtxt(original_name + ".txt")
     data = data[np.invert(np.all(np.isnan(data), axis=1))]
 
@@ -27,12 +23,11 @@ if __name__ == "__main__":
     eps = data[:, eps_index][:, None, None]
 
     P_actual = P_indv(eps)
+    if P_actual.ndim == 2:
+        P_actual = np.repeat(P_actual[None, :, :], repeats=eps.shape[0], axis=0)
     P_vm = np.array([[1, -0.5, -0.5],
                      [-0.5, 1, -0.5],
                      [-0.5, -0.5, 1]]) / 100
-
-    P_vm = np.array([[1, -0.5],
-                     [-0.5, 1]]) / 100
 
     P_vm = np.repeat(P_vm[None, :, :], repeats=len(P_actual), axis=0)
 

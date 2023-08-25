@@ -6,7 +6,7 @@ from bingo.symbolic_regression.implicit_regression_md import ImplicitRegressionM
     _calculate_partials
 
 
-def flat_to_pi_plane_rot():
+def pi_plane_to_flat_rot():
     pi_vector = np.array([1, 1, 1]) / np.sqrt(3.)
     wanted_vector = np.array([0, 0, 1])
     added = (pi_vector + wanted_vector).reshape([-1, 1])
@@ -16,8 +16,8 @@ def flat_to_pi_plane_rot():
     return rot_mat
 
 
-def pi_plane_to_flat_rot():
-    return np.linalg.inv(flat_to_pi_plane_rot())
+def flat_to_pi_plane_rot():
+    return np.linalg.inv(pi_plane_to_flat_rot())
 
 
 def get_dx_dt(x_with_nan):
