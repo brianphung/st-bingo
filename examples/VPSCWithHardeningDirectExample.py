@@ -85,7 +85,11 @@ class ParentAgraphIndv:
 
         # mapping_matrices = torch.linalg.inv(self.mapping_indv.evaluate_equation_at_no_detach([state_parameters]))
         mapping_matrices = self.mapping_indv.evaluate_equation_at_no_detach([state_parameters])
+        mapped_stresses = mapping_matrices @ principal_stresses
 
+        yield_stresses = torch.transpose(mapped_stresses, 1, 2) @ self.P_desired @ mapped_stresses
+
+        """
         try:
             # aniso -> vm
             # mapping_matrices = torch.linalg.inv(mapping_matrices)
@@ -96,12 +100,12 @@ class ParentAgraphIndv:
             yield_stresses = torch.transpose(mapped_stresses, 1, 2) @ self.P_desired @ mapped_stresses
         except RuntimeError:
             yield_stresses = torch.full((principal_stresses.size(0), 1, 1), torch.inf)
+        """
 
         if detach:
             return yield_stresses.detach().numpy()
         else:
             return yield_stresses
-
 
     def evaluate_equation_with_x_gradient_at(self, x):
         for input in x:
@@ -208,8 +212,8 @@ def main():
 
     from VPSCWithHardeningParentAgraphImplicitExample import ExplicitOptimizedImplicitFitness
     # local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm='lm', param_init_bounds=[-1, 1])
-    local_opt_fitness = ExplicitOptimizedImplicitFitness(yield_surface_fitness, parent_explicit, algorithm="lm", param_init_bounds=[-1, 1])
-    # local_opt_fitness = ContinuousLocalOptimizationMD(parent_implicit, algorithm="lm", param_init_bounds=[-1, 1])
+    # local_opt_fitness = ExplicitOptimizedImplicitFitness(yield_surface_fitness, parent_explicit, algorithm="lm", param_init_bounds=[-1, 1])
+    local_opt_fitness = ContinuousLocalOptimizationMD(parent_implicit, algorithm="lm", param_init_bounds=[-1, 1])
     evaluator = Evaluation(local_opt_fitness, multiprocess=3)
 
     ideal_eq = get_ideal_eq()
