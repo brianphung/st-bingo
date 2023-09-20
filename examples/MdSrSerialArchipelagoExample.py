@@ -52,7 +52,9 @@ def main(use_pytorch):
 
     crossover = AGraphCrossoverMD()
     mutation = AGraphMutationMD(component_generator)
-    agraph_generator = AGraphGeneratorMD(STACK_SIZE, component_generator, x_dims, y_dim, use_simplification=False,
+    agraph_generator = AGraphGeneratorMD(STACK_SIZE, component_generator,
+                                         x_dims, y_dim,
+                                         use_simplification=False,
                                          use_pytorch=use_pytorch)
 
     fitness = ExplicitRegressionMD(training_data=training_data)
@@ -63,10 +65,9 @@ def main(use_pytorch):
                       mutation, 0.4, 0.4, POP_SIZE)
 
     island = Island(ea, agraph_generator, POP_SIZE)
-    # archipelago = SerialArchipelago(island)
 
     opt_result = island.evolve_until_convergence(max_generations=500,
-                                                      fitness_threshold=1.0e-5)
+                                                 fitness_threshold=1.0e-5)
 
     print(local_opt_fitness.eval_count)
     print(opt_result)
@@ -74,19 +75,10 @@ def main(use_pytorch):
     print(best_indiv.get_formatted_string("console"))
     print(best_indiv.fitness)
 
-    # test_x = [np.array([[[-1, 0, 1],
-    #                      [-2, -1, 0],
-    #                      [-3, -2, -1]]])]
-    # print(best_indiv.evaluate_equation_at(test_x))
-
 
 if __name__ == '__main__':
     import random
-    random.seed(7)
-    np.random.seed(7)
+    random.seed(2)
+    np.random.seed(2)
 
-    import time
-    time_1 = time.perf_counter_ns()
     main(use_pytorch=True)
-    time_2 = time.perf_counter_ns()
-    print((time_2 - time_1) / 1e9)
