@@ -2,7 +2,6 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=missing-docstring
 import numpy as np
-import torch
 
 from bingo.evolutionary_algorithms.age_fitness import AgeFitnessEA
 from bingo.evaluation.evaluation import Evaluation
@@ -37,9 +36,6 @@ def main(use_pytorch):
 
     y = equation_eval(x)
     y_dim = y[0].shape
-    if use_pytorch:
-        x = torch.from_numpy(x_0[None, :]).double()
-        # y = torch.from_numpy(y).double()
     training_data = ExplicitTrainingDataMD(x, y)
 
     print("Dimensions of X variables:", x_dims)
@@ -75,7 +71,7 @@ def main(use_pytorch):
 
 if __name__ == '__main__':
     import random
-    random.seed(3)
-    np.random.seed(3)
+    random.seed(7)
+    np.random.seed(7)
 
-    main(use_pytorch=True)
+    main(use_pytorch=False)

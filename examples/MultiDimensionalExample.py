@@ -25,7 +25,7 @@ if __name__ == '__main__':
                                          [VARIABLE, 0, 3, 1],
                                          [MULTIPLICATION, 0, 1, 0]], dtype=int)
     test_graph._update()
-    test_graph.set_local_optimization_params(C.flatten(), np.array([(3, 3)]))
+    test_graph.set_local_optimization_params(C.flatten(), [(3, 3)])
     print(test_graph.constants)
     print("pred y:", test_graph.evaluate_equation_at(x))
     print(fitness(test_graph))
