@@ -5,7 +5,6 @@ import numpy as np
 import torch
 
 from bingo.evolutionary_algorithms.age_fitness import AgeFitnessEA
-from bingo.evolutionary_optimizers.serial_archipelago import SerialArchipelago
 from bingo.evaluation.evaluation import Evaluation
 from bingo.evolutionary_optimizers.island import Island
 
@@ -69,16 +68,14 @@ def main(use_pytorch):
     opt_result = island.evolve_until_convergence(max_generations=500,
                                                  fitness_threshold=1.0e-5)
 
-    print(local_opt_fitness.eval_count)
     print(opt_result)
     best_indiv = island.get_best_individual()
-    print(best_indiv.get_formatted_string("console"))
-    print(best_indiv.fitness)
+    print("found equation:", best_indiv.get_formatted_string("console"))
 
 
 if __name__ == '__main__':
     import random
-    random.seed(2)
-    np.random.seed(2)
+    random.seed(3)
+    np.random.seed(3)
 
     main(use_pytorch=True)
