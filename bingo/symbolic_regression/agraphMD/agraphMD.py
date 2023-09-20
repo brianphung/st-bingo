@@ -84,7 +84,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
     def __init__(self, input_dims, output_dim, use_simplification=False):
         super().__init__()
 
-        self.input_dims = input_dims
+        self.input_dims = [input_dim if input_dim != () else (0, 0) for input_dim in input_dims]
         self.output_dim = output_dim
 
         self._use_simplification = use_simplification

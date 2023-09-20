@@ -22,9 +22,9 @@ def sample_x():
 
 @pytest.fixture
 def sample_constants():
-    return np.array([[[1, 1, 1],
+    return [np.array([[1, 1, 1],
                       [2, 2, 2],
-                      [3, 3, 3]], 3.14])
+                      [3, 3, 3]]), np.array(3.14)]
 
 
 def _terminal_evaluations(terminal, x, constants, dims):
@@ -84,9 +84,9 @@ def test_variable_load_evaluate(sample_x, param):
 @pytest.mark.parametrize("param", range(2))  # likewise should be range(len(sample_constants))
 def test_constant_load_evaluate(sample_constants, param):
     stack = np.array([[CONSTANT, param, 0, 0]], dtype=int)
-    expected_outcome = sample_constants[param]
+    expected_outcome = sample_constants[param][None]
 
-    f_of_x = evaluation_backend.evaluate(stack, [], sample_constants)
+    f_of_x = evaluation_backend.evaluate(stack, [[1]], sample_constants)
     assert np.array_equal(expected_outcome, f_of_x) is True
 
 
@@ -102,9 +102,9 @@ def test_addition_like_evaluate(operator, x_1, x_2):
     assert np.array_equal(expected_outcome, f_of_x) is True
 
 
-@pytest.mark.parametrize("x_1, x_2", [(1.0, -1.5),
-                                      (1.0, np.ones((3, 3))),
-                                      (np.ones((3, 3)), 1.0),
+@pytest.mark.parametrize("x_1, x_2", [(np.array(1.0), np.array(-1.5)),
+                                      (np.array(1.0), np.ones((3, 3))),
+                                      (np.ones((3, 3)), np.array(1.0)),
                                       (np.ones((3, 2)), np.ones((2, 4))),
                                       (np.ones((1, 1)), np.ones((1, 1)))])
 def test_multiplication_evaluate(x_1, x_2):

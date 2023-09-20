@@ -14,6 +14,7 @@ from bingo.symbolic_regression.agraphMD.operator_definitions \
     import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, \
     DIVISION, SIN, COS, EXPONENTIAL, LOGARITHM, ABS, SQRT, SINH, COSH, TRANSPOSE,\
     ARCTAN, ARCCOS, CROSS, NORMALIZE
+from bingo.symbolic_regression.agraphMD.validation_backend.validation_backend import is_scalar_shape
 
 
 np.seterr(divide='ignore', invalid='ignore')
@@ -77,7 +78,7 @@ class _MultiplyForwardEval(_ForwardEvalBase):
     def evaluate(param1, param2, param3, x, constants, forward_eval):
         fe_1, fe_2 = forward_eval[param1], forward_eval[param2]
         shape_1, shape_2 = fe_1.shape, fe_2.shape
-        if len(shape_1) == 1 or len(shape_2) == 1 or shape_1 == () or shape_2 == ():
+        if len(shape_1) == 1 or len(shape_2) == 1 or is_scalar_shape(shape_1[1:]) or is_scalar_shape(shape_2[1:]):
             if len(shape_1) == 1 and not len(shape_2) == 1:
                 fe_1 = fe_1.reshape(-1, 1, 1)
             if len(shape_2) == 1 and not len(shape_1) == 1:

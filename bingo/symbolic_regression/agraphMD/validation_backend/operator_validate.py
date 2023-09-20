@@ -3,6 +3,10 @@ import numpy as np
 from bingo.symbolic_regression.agraphMD.operator_definitions import *
 
 
+def is_scalar_shape(shape):
+    return shape == () or shape == (0, 0) or shape == (1, 1)
+
+
 # NOTE (David Randall): it is assumed node, param1, param2, param3, are all integers
 class _ValidateBase:
     @staticmethod
@@ -36,13 +40,12 @@ class _LoadConstantValidate(_ValidateBase):
         if param1 < -1:
             return False, dims_from_command
         try:
-            if dims_from_command != (0, 0):
+            if not is_scalar_shape(dims_from_command):
                 return param2 >= 0 and param3 >= 0 and \
                        constant_dims[param1] == dims_from_command, dims_from_command
             else:
                 return param2 >= 0 and param3 >= 0 and \
-                       constant_dims[param1] == () or \
-                       constant_dims[param1] == (0, 0), dims_from_command
+                       is_scalar_shape(constant_dims[param1]), dims_from_command
         except IndexError:
             return False, dims_from_command
 
@@ -58,13 +61,13 @@ class _MultiplyValidate(_ValidateBase):
     def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
         dim_1, dim_2 = tuple(dimensions[param1]), tuple(dimensions[param2])
         # scalar * scalar
-        if dim_1 == (0, 0) and dim_2 == (0, 0):
+        if is_scalar_shape(dim_1) and is_scalar_shape(dim_2):
             return True, (0, 0)
         # scalar * matrix
-        elif dim_1 == (0, 0) and dim_2[0] > 0 and dim_2[1] > 0:
+        elif is_scalar_shape(dim_1) and dim_2[0] > 0 and dim_2[1] > 0:
             return True, dim_2
         # matrix * scalar
-        elif dim_2 == (0, 0) and dim_1[0] > 0 and dim_1[1] > 0:
+        elif is_scalar_shape(dim_2) and dim_1[0] > 0 and dim_1[1] > 0:
             return True, dim_1
         # matrix * matrix
         elif dim_1[1] == dim_2[0]:
@@ -77,7 +80,7 @@ class _ScalarOnlyValidate(_ValidateBase):
     @staticmethod
     def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
         dim_1, dim_2 = tuple(dimensions[param1]), tuple(dimensions[param2])
-        return (dim_1 == (0, 0) and dim_2 == (0, 0)) or (dim_1 == (1, 1) and dim_2 == (1, 1)), dim_1
+        return is_scalar_shape(dim_1) and is_scalar_shape(dim_2), dim_1
 
 
 class _TransposeValidate(_ValidateBase):

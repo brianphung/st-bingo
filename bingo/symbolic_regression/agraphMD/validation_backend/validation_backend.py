@@ -1,6 +1,6 @@
 import numpy as np
 
-from bingo.symbolic_regression.agraphMD.validation_backend.operator_validate import validate_operator
+from bingo.symbolic_regression.agraphMD.validation_backend.operator_validate import validate_operator, is_scalar_shape
 
 
 def validate_individual(individual):

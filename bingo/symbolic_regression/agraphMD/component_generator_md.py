@@ -48,6 +48,7 @@ class ComponentGeneratorMD:
         #  each tuple in input_x_dimensions
         if input_x_dimensions is None:
             input_x_dimensions = []
+        input_x_dimensions = [input_dim if input_dim != () else (0, 0) for input_dim in input_x_dimensions]
         self.input_x_dimensions = np.array(input_x_dimensions)
         self.possible_dims = possible_dims
         self.possible_dim_weights = possible_dim_weights

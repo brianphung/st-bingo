@@ -16,7 +16,7 @@ from bingo.symbolic_regression.agraphMD.operator_definitions \
            SQRT, SAFE_POWER, TRANSPOSE, ARCTAN, ARCCOS, CROSS, NORMALIZE, \
            MATRIX_MULT
 from bingo.symbolic_regression.agraphMD.validation_backend.validation_backend \
-    import get_stack_command_dimensions
+    import get_stack_command_dimensions, is_scalar_shape
 
 STACK_PRINT_MAP = {ADDITION: "({}) + ({})",
                    SUBTRACTION: "({}) - ({})",
@@ -166,10 +166,6 @@ def _get_stack_element_string(command_index, stack_element, constants):
     return tmp_str
 
 
-def _is_scalar_shape(shape):
-    return shape == (0, 0) or shape == (1, 1) or shape == ()
-
-
 def _get_formatted_element_string(stack_element, str_list,
                                   format_dict, constants,
                                   stack_shapes):
@@ -185,8 +181,8 @@ def _get_formatted_element_string(stack_element, str_list,
     elif node == INTEGER:
         tmp_str = str(int(param1))
     elif node == MULTIPLICATION:
-        if _is_scalar_shape(stack_shapes[param1]) or \
-                _is_scalar_shape(stack_shapes[param2]):
+        if is_scalar_shape(stack_shapes[param1]) or \
+                is_scalar_shape(stack_shapes[param2]):
             tmp_str = format_dict[node].format(str_list[param1],
                                                str_list[param2])
         else:
