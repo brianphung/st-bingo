@@ -43,13 +43,19 @@ class _IntegerForwardEval(_ForwardEvalBase):
 class _LoadXForwardEval(_ForwardEvalBase):
     @staticmethod
     def evaluate(param1, param2, param3, x, constants, forward_eval):
-        return x[param1]
+        loaded_x = x[param1]
+        if loaded_x.ndim == 1:
+            loaded_x = loaded_x.reshape((-1, 1, 1))
+        return loaded_x
 
 
 class _LoadCForwardEval(_ForwardEvalBase):
     @staticmethod
     def evaluate(param1, param2, param3, x, constants, forward_eval):
-        return np.array([constants[param1]] * len(x[0]))
+        loaded_c = np.array([constants[param1]] * len(x[0]))
+        if loaded_c.ndim == 1:
+            loaded_c = loaded_c.reshape((-1, 1, 1))
+        return loaded_c
 
 
 class _AddForwardEval(_ForwardEvalBase):
@@ -93,7 +99,13 @@ class _MultiplyForwardEval(_ForwardEvalBase):
 class _DivisionForwardEval(_ForwardEvalBase):
     @staticmethod
     def evaluate(param1, param2, param3, x, constants, forward_eval):
-        return forward_eval[param1] / forward_eval[param2]
+        fe1 = forward_eval[param1]
+        fe2 = forward_eval[param2]
+        if fe1.ndim == 1:
+            fe1 = fe1.reshape((-1, 1, 1))
+        if fe2.ndim == 1:
+            fe2 = fe2.reshape((-1, 1, 1))
+        return fe1 / fe2
 
 
 class _SinForwardEval(_ForwardEvalBase):
