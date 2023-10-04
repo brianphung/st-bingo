@@ -175,9 +175,7 @@ def get_dx_dt(x_with_nan):
         dx_dt = dx_dt[1:]
         dx_dts.append(dx_dt)
 
-
-    dx_dts = np.array(dx_dts)
-    dx_dts = dx_dts.reshape((-1, dx_dts.shape[2]))
+    dx_dts = np.vstack(dx_dts)
     return dx_dts
 
 

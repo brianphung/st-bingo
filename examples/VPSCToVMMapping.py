@@ -38,9 +38,10 @@ def main(use_pytorch=False):
             numpy_version.append(data_entry)
         return np.array(numpy_version)
 
-    state_parameters = [get_numpy_matrix(df, "eps")]
-    P_actual = get_numpy_matrix(df, "P_actual")
-    P_desired = get_numpy_matrix(df, "P_vm")
+    state_parameters = [get_numpy_matrix(df, "eps").astype(np.float64)]
+    P_actual = get_numpy_matrix(df, "P_actual").astype(np.float64)
+    P_desired = get_numpy_matrix(df, "P_vm").astype(np.float64)
+    # P_desired *= P_desired * (state_parameters[0] + 1)[:, None, None]
 
     x_dims = [(0, 0) if np.shape(x_[0]) == () else np.shape(x_[0]) for x_ in state_parameters]
     y_dim = P_desired[0].shape
