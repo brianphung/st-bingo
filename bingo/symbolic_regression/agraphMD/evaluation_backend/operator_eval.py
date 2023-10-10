@@ -53,7 +53,7 @@ class _LoadCForwardEval(_ForwardEvalBase):
     @staticmethod
     def evaluate(param1, param2, param3, x, constants, forward_eval):
         loaded_c = np.array([constants[param1]] * len(x[0]))
-        if loaded_c.ndim == 1:
+        if loaded_c.ndim == 2:
             loaded_c = loaded_c.reshape((-1, 1, 1))
         return loaded_c
 

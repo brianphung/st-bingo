@@ -224,15 +224,19 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
                 # make sure that this constant is square, if so, get
                 # the dimension size for each dimension
                 if isinstance(constant, np.ndarray):
-                    if constant.ndim == 2:
-                        assert constant.shape[0] == constant.shape[1]
-                        shape_for_all_dim = constant.shape[0]
-                    elif constant.ndim == 1:
-                        shape_for_all_dim = constant.shape[0]
+                    # for vector and scalar cases
+                    if any([shape_component == 1 for shape_component in constant.shape]):
+                        num_params += max(constant.shape)
                     else:
-                        raise AssertionError("invalid number of dimensions for symmetric constant")
+                        if constant.ndim == 2:
+                            assert constant.shape[0] == constant.shape[1]
+                            shape_for_all_dim = constant.shape[0]
+                        elif constant.ndim == 1:
+                            shape_for_all_dim = constant.shape[0]
+                        else:
+                            raise AssertionError("invalid number of dimensions for symmetric constant")
 
-                    num_params += len(constant[np.triu_indices(shape_for_all_dim)])
+                        num_params += len(constant[np.triu_indices(shape_for_all_dim)])
                 elif isinstance(constant, float):
                     num_params += 1
                 else:
@@ -266,7 +270,8 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
 
     @staticmethod
     def _get_symmetric_matrix(upper_triangular_section, shape):
-        if len(shape) > 1:
+        is_scalar_or_vector = any([shape_component == 1 for shape_component in shape]) or len(shape) <= 1
+        if not is_scalar_or_vector:
             sym_mat = np.zeros(shape)
             sym_mat[np.triu_indices(shape[0])] = upper_triangular_section
             sym_mat += sym_mat.T - np.diag(np.diag(sym_mat))
@@ -278,9 +283,12 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         constants = []
         prev_i = 0
         for shape in shapes:
+            is_vector = any([shape_component == 1 for shape_component in shape])
             if shape == (0, 0) or shape == ():
                 shape = (1, 1)
                 len_const = 1
+            elif is_vector:
+                len_const = max(shape)
             else:
                 assert shape[0] == shape[1]
 
@@ -288,7 +296,10 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
                 len_const = sum([i for i in range(shape[0] + 1)])
             next_i = prev_i + len_const
 
-            constants.append(self._get_symmetric_matrix(flattened_upper_triangular[prev_i:next_i], shape))
+            symmetric_constant = self._get_symmetric_matrix(flattened_upper_triangular[prev_i:next_i], shape)
+            if is_vector:
+                symmetric_constant = symmetric_constant.reshape(shape)
+            constants.append(symmetric_constant)
             prev_i = next_i
 
         self._simplified_constants = tuple(constants)
