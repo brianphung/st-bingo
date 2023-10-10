@@ -24,12 +24,13 @@ class AGraphGeneratorMD(Generator):
     """
     @argument_validation(agraph_size={">=": 1})
     def __init__(self, agraph_size, component_generator, input_dims, output_dim, use_simplification=False,
-                 use_pytorch=False):
+                 use_pytorch=False, use_symmetric_constants=False):
         self.agraph_size = agraph_size
         self.component_generator = component_generator
         self._input_dims = input_dims
         self._output_dim = output_dim
         self._use_simplification = use_simplification
+        self._use_symmetric_constants = use_symmetric_constants
 
         self._backend_generator_function = self._python_generator_function
         if use_pytorch:
@@ -50,12 +51,14 @@ class AGraphGeneratorMD(Generator):
     def _python_generator_function(self):
         return AGraphMD(input_dims=self._input_dims,
                         output_dim=self._output_dim,
-                        use_simplification=self._use_simplification)
+                        use_simplification=self._use_simplification,
+                        use_symmetric_constants=self._use_symmetric_constants)
 
     def _pytorch_generator_function(self):
         return PytorchAGraphMD(input_dims=self._input_dims,
                                output_dim=self._output_dim,
-                               use_simplification=self._use_simplification)
+                               use_simplification=self._use_simplification,
+                               use_symmetric_constants=self._use_symmetric_constants)
 
     def _create_individual(self):
         attempts = 0

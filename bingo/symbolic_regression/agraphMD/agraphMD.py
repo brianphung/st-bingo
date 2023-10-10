@@ -81,13 +81,15 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
     constants : tuple of numeric
         numeric constants that are used in the equation
     """
-    def __init__(self, input_dims, output_dim, use_simplification=False):
+    def __init__(self, input_dims, output_dim, use_simplification=False,
+                 use_symmetric_constants=False):
         super().__init__()
 
         self.input_dims = [input_dim if input_dim != () else (0, 0) for input_dim in input_dims]
         self.output_dim = output_dim
 
         self._use_simplification = use_simplification
+        self._use_symmetric_constants = use_symmetric_constants
 
         self._command_array = np.empty([0, 4], dtype=int)
         self._constants = []
@@ -215,44 +217,75 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         """
         if self._modified:
             self._update()
-        return sum([len(np.array(constant).flatten()) for constant in self._simplified_constants])
+        if self._use_symmetric_constants:
+            num_params = 0
 
-    def set_local_optimization_params(self, flattened_params, shapes=[(3, 3)]):  # TODO make shapes optional
+            for constant in self._simplified_constants:
+                # make sure that this constant is square, if so, get
+                # the dimension size for each dimension
+                if isinstance(constant, np.ndarray):
+                    if constant.ndim == 2:
+                        assert constant.shape[0] == constant.shape[1]
+                        shape_for_all_dim = constant.shape[0]
+                    elif constant.ndim == 1:
+                        shape_for_all_dim = constant.shape[0]
+                    else:
+                        raise AssertionError("invalid number of dimensions for symmetric constant")
+
+                    num_params += len(constant[np.triu_indices(shape_for_all_dim)])
+                elif isinstance(constant, float):
+                    num_params += 1
+                else:
+                    raise AssertionError(f"invalid type for symmetric constant: {type(constant)}")
+
+            return num_params
+        else:
+            return sum([len(np.array(constant).flatten()) for constant in self._simplified_constants])
+
+    def set_local_optimization_params(self, flattened_params, shapes):  # TODO make shapes optional
         # TODO testing to make sure that set constant = desired dimensions from cmd_ar
         # TODO documentation
-        constants = []
-        prev_i = 0
-        for shape in shapes:
-            if shape == (0, 0):
-                shape = ()
-                len_const = 1
-            elif shape == ():
-                len_const = 1
-            else:
-                len_const = shape[0] * shape[1]
-            next_i = prev_i + len_const
+        if self._use_symmetric_constants:
+            self.set_symmetric_constants(flattened_params, shapes)
+        else:
+            constants = []
+            prev_i = 0
+            for shape in shapes:
+                if shape == (0, 0) or shape == ():
+                    shape = (1, 1)
+                    len_const = 1
+                else:
+                    len_const = shape[0] * shape[1]
+                next_i = prev_i + len_const
 
-            constants.append(np.array(flattened_params[prev_i:next_i]).reshape(shape))
-            prev_i = next_i
+                constants.append(np.array(flattened_params[prev_i:next_i]).reshape(shape))
+                prev_i = next_i
 
-        self._simplified_constants = tuple(constants)
-        self._needs_opt = False
+            self._simplified_constants = tuple(constants)
+            self._needs_opt = False
 
     @staticmethod
     def _get_symmetric_matrix(upper_triangular_section, shape):
-        sym_mat = np.zeros(shape)
-        sym_mat[np.triu_indices(shape[0])] = upper_triangular_section
-        sym_mat += sym_mat.T - np.diag(np.diag(sym_mat))
-        return sym_mat
+        if len(shape) > 1:
+            sym_mat = np.zeros(shape)
+            sym_mat[np.triu_indices(shape[0])] = upper_triangular_section
+            sym_mat += sym_mat.T - np.diag(np.diag(sym_mat))
+            return sym_mat
+        else:
+            return upper_triangular_section
 
     def set_symmetric_constants(self, flattened_upper_triangular, shapes):
         constants = []
         prev_i = 0
         for shape in shapes:
-            if shape == ():
+            if shape == (0, 0) or shape == ():
+                shape = (1, 1)
                 len_const = 1
             else:
-                len_const = shape[0] * shape[1]
+                assert shape[0] == shape[1]
+
+                # get number of entries in upper triangular section
+                len_const = sum([i for i in range(shape[0] + 1)])
             next_i = prev_i + len_const
 
             constants.append(self._get_symmetric_matrix(flattened_upper_triangular[prev_i:next_i], shape))
@@ -450,3 +483,4 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         agraph_duplicate._needs_opt = self._needs_opt
         agraph_duplicate._modified = self._modified
         agraph_duplicate._use_simplification = self._use_simplification
+        agraph_duplicate._use_symmetric_constants = self._use_symmetric_constants
