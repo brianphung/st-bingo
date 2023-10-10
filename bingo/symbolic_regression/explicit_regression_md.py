@@ -13,8 +13,6 @@ import numpy as np
 from ..evaluation.fitness_function import VectorBasedFunction
 from ..evaluation.training_data import TrainingData
 
-from .agraphMD.agraphMD import AGraphMD
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -35,9 +33,10 @@ class ExplicitRegressionMD(VectorBasedFunction):
         Whether to use relative, pointwise normalization of errors. Default:
         False.
     """
-    def __init__(self, training_data, metric="mae", relative=False):
+    def __init__(self, training_data, metric="mae", relative=False, relative_type="division"):
         super().__init__(training_data, metric)
         self._relative = relative
+        self._relative_type = relative_type
 
     def evaluate_fitness_vector(self, individual):
         """ Traditional fitness evaluation for symbolic regression
@@ -54,31 +53,28 @@ class ExplicitRegressionMD(VectorBasedFunction):
         self.eval_count += 1
         f_of_x = individual.evaluate_equation_at(self.training_data.x)
 
-        """
-        agraph_version = AGraphMD(individual.input_dims, individual.output_dim)
-        agraph_version.command_array = individual.command_array
-        agraph_version._update()
-        if individual.constants:
-            flattened_constants = np.concatenate([c.flatten() for c in individual.constants])
-        else:
-            flattened_constants = individual.constants
-        agraph_version.set_local_optimization_params(flattened_constants, individual.simplified_constant_shapes)
-        agraph_fx = agraph_version.evaluate_equation_at(
-                [x_.detach().numpy() for x_ in self.training_data.x])
-                # self.training_data.x)
-        print(agraph_version)
-        print(repr(agraph_version.command_array))
-        np.testing.assert_allclose(f_of_x.detach().numpy(), agraph_fx)
-        """
-
         assert f_of_x.shape == self.training_data.y.shape
         error = f_of_x - self.training_data.y
+        assert error.shape == self.training_data.y.shape
         if not self._relative:
             return error.flatten()
-        # rel_err = 2.0 * error / (np.abs(f_of_x) + np.abs(self.training_data.y))  # RPD
-        # both_zero = (f_of_x == 0) & (self.training_data.y == 0)
-        # rel_err[both_zero] = 0
-        rel_err = error / self.training_data.y
+
+        if self._relative_type == "norm":
+            y_ndim = self.training_data.y.ndim
+            non_data_axes = tuple(range(1, y_ndim))
+            y_norm = np.linalg.norm(self.training_data.y, axis=non_data_axes)
+
+            # pad with extra dimensions for broadcasting
+            y_norm = y_norm.reshape((-1, *np.ones(y_ndim - 1, dtype=int)))
+
+            rel_err = error / y_norm
+        elif self._relative_type == "percent difference":
+            rel_err = 2.0 * error / (np.abs(f_of_x) + np.abs(self.training_data.y))  # RPD
+            both_zero = (f_of_x == 0) & (self.training_data.y == 0)
+            rel_err[both_zero] = 0
+        else:  # relative type == division
+            rel_err = error / self.training_data.y
+        assert rel_err.shape == self.training_data.y.shape
         return rel_err.flatten()
 
     def get_fitness_vector_and_jacobian(self, individual):

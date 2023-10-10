@@ -52,7 +52,7 @@ def main():
                                          use_simplification=False,
                                          use_symmetric_constants=True)
 
-    fitness = ExplicitRegressionMD(training_data=training_data, relative=True)
+    fitness = ExplicitRegressionMD(training_data=training_data, relative=True, relative_type="norm")
     local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='lm', param_init_bounds=[0, 0])
     evaluator = Evaluation(local_opt_fitness)
 
