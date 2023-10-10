@@ -28,6 +28,8 @@ class AGraphGeneratorMD(Generator):
         self.agraph_size = agraph_size
         self.component_generator = component_generator
         self._input_dims = input_dims
+        if output_dim == () or output_dim == (0, 0):
+            output_dim = (1, 1)
         self._output_dim = output_dim
         self._use_simplification = use_simplification
         self._use_symmetric_constants = use_symmetric_constants

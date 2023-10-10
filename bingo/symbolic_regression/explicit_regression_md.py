@@ -104,6 +104,8 @@ class ExplicitTrainingDataMD(TrainingData):
     """
     def __init__(self, x, y):
         self._x = x
+        if y.ndim == 1:
+            y = y.reshape((-1, 1, 1))
         self._y = y
 
     @property
