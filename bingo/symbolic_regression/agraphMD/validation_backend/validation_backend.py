@@ -13,7 +13,10 @@ def validate(stack, x_dims, output_dim, constant_dims):
         valid, dimensions[i] = validate_operator(node, param1, param2, param3, dimensions, x_dims, constant_dims)
         if not valid:
             return False
-    if tuple(dimensions[-1]) != output_dim:
+    last_dim = tuple(dimensions[-1])
+    if last_dim != output_dim:
+        if is_scalar_shape(output_dim):
+            return is_scalar_shape(last_dim)
         return False
     return True
 

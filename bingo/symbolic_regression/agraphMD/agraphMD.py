@@ -277,7 +277,10 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
             sym_mat += sym_mat.T - np.diag(np.diag(sym_mat))
             return sym_mat
         else:
-            return upper_triangular_section
+            if shape == (1, 1):
+                return upper_triangular_section.reshape((1, 1))
+            else:
+                return upper_triangular_section
 
     def set_symmetric_constants(self, flattened_upper_triangular, shapes):
         constants = []
