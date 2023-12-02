@@ -229,8 +229,11 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
                         num_params += max(constant.shape)
                     else:
                         if constant.ndim == 2:
-                            assert constant.shape[0] == constant.shape[1]
-                            shape_for_all_dim = constant.shape[0]
+                            if constant.shape[0] == constant.shape[1]:
+                                shape_for_all_dim = constant.shape[0]
+                            else:
+                                num_params += constant.shape[0] * constant.shape[1]
+                                continue
                         elif constant.ndim == 1:
                             shape_for_all_dim = constant.shape[0]
                         else:
@@ -272,6 +275,8 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
     def _get_symmetric_matrix(upper_triangular_section, shape):
         is_scalar_or_vector = any([shape_component == 1 for shape_component in shape]) or len(shape) <= 1
         if not is_scalar_or_vector:
+            if shape[0] != shape[1]:
+                return upper_triangular_section.reshape(shape)
             sym_mat = np.zeros(shape)
             sym_mat[np.triu_indices(shape[0])] = upper_triangular_section
             sym_mat += sym_mat.T - np.diag(np.diag(sym_mat))
@@ -293,10 +298,11 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
             elif is_vector:
                 len_const = max(shape)
             else:
-                assert shape[0] == shape[1]
-
-                # get number of entries in upper triangular section
-                len_const = sum([i for i in range(shape[0] + 1)])
+                if shape[0] == shape[1]:
+                    # get number of entries in upper triangular section
+                    len_const = sum([i for i in range(shape[0] + 1)])
+                else:
+                    len_const = shape[0] * shape[1]
             next_i = prev_i + len_const
 
             symmetric_constant = self._get_symmetric_matrix(flattened_upper_triangular[prev_i:next_i], shape)
