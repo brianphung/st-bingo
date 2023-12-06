@@ -177,6 +177,13 @@ def _normalize_forward_eval(param1, param2, param3, x, constants, forward_eval):
     return vectors / magnitude[:, None]
 
 
+def _element_wise_forward_eval(param1, param2, param3, x, constants, forward_eval):
+    return forward_eval[param1] * forward_eval[param2]
+
+
+def _matrix_vec_forward_eval(param1, param2, param3, x, constants, forward_eval):
+    return forward_eval[param1] @ forward_eval[param2]
+
 def forward_eval_function(node, param1, param2, param3, x, constants, forward_eval):
     """Performs calculation of one line of stack"""
     # IMPORTANT: Assumes x is column-major
@@ -205,4 +212,6 @@ FORWARD_EVAL_MAP = {INTEGER: _integer_forward_eval,
                     ARCTAN: _arctan_forward_eval,
                     ARCCOS: _arccos_forward_eval,
                     CROSS: _cross_forward_eval,
-                    NORMALIZE: _normalize_forward_eval}
+                    NORMALIZE: _normalize_forward_eval,
+                    ELEMENTWISE_MULT: _element_wise_forward_eval,
+                    MATRIX_VEC_MULT: _matrix_vec_forward_eval}

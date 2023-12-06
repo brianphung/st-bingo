@@ -14,7 +14,7 @@ from bingo.symbolic_regression.agraphMD.operator_definitions \
     import INTEGER, VARIABLE, CONSTANT, ADDITION, SUBTRACTION, MULTIPLICATION, \
            DIVISION, SIN, COS, SINH, COSH, EXPONENTIAL, LOGARITHM, POWER, ABS, \
            SQRT, SAFE_POWER, TRANSPOSE, ARCTAN, ARCCOS, CROSS, NORMALIZE, \
-           MATRIX_MULT
+           MATRIX_MULT, ELEMENTWISE_MULT, MATRIX_VEC_MULT
 from bingo.symbolic_regression.agraphMD.validation_backend.validation_backend \
     import get_stack_command_dimensions, is_scalar_shape
 
@@ -36,7 +36,9 @@ STACK_PRINT_MAP = {ADDITION: "({}) + ({})",
                    ARCTAN: "arctan ({})",
                    ARCCOS: "arccos ({})",
                    CROSS: "({}) x ({})",
-                   NORMALIZE: "normalize ({})"}
+                   NORMALIZE: "normalize ({})",
+                   ELEMENTWISE_MULT: "({}) * ({})",
+                   MATRIX_VEC_MULT: "({}) @ ({})"}
 LATEX_PRINT_MAP = {ADDITION: "{} + {}",
                    SUBTRACTION: "{} - ({})",
                    MULTIPLICATION: "({})({})",
@@ -56,7 +58,9 @@ LATEX_PRINT_MAP = {ADDITION: "{} + {}",
                    ARCCOS: "cos^{-1}{{ {} }}",
                    CROSS: "({}) \\times ({})",
                    NORMALIZE: "\\text{normalize}({})",
-                   MATRIX_MULT: "({})({})"}
+                   MATRIX_MULT: "({})({})",
+                   ELEMENTWISE_MULT: "({})({})",
+                   MATRIX_VEC_MULT: "({})({})"}
 SYMPY_PRINT_MAP = {ADDITION: "{} + {}",
                    SUBTRACTION: "{} - ({})",
                    MULTIPLICATION: "({}) * ({})",
@@ -76,7 +80,9 @@ SYMPY_PRINT_MAP = {ADDITION: "{} + {}",
                    ARCCOS: "acos({})",
                    CROSS: "cross({}, {})",
                    NORMALIZE: "normalize({})",
-                   MATRIX_MULT: "({}) @ ({})"}
+                   MATRIX_MULT: "({}) @ ({})",
+                   ELEMENTWISE_MULT: "({}) * ({})",
+                   MATRIX_VEC_MULT: "({}) @ ({})"}
 CONSOLE_PRINT_MAP = {ADDITION: "{} + {}",
                      SUBTRACTION: "{} - ({})",
                      MULTIPLICATION: "({}) * ({})",
@@ -96,7 +102,9 @@ CONSOLE_PRINT_MAP = {ADDITION: "{} + {}",
                      ARCCOS: "arccos({})",
                      CROSS: "({}) x ({})",
                      NORMALIZE: "normalize({})",
-                     MATRIX_MULT: "({}) @ ({})"}
+                     MATRIX_MULT: "({}) @ ({})",
+                     ELEMENTWISE_MULT: "({}) * ({})",
+                     MATRIX_VEC_MULT: "({}) @ ({})"}
 
 
 # TODO reintroduce stack formatting

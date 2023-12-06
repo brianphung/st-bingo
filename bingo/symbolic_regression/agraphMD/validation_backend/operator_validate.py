@@ -117,6 +117,37 @@ class _NormalizeValidate(_ValidateBase):
         return 3 in dim_1, dim_1
 
 
+class _ElementWiseMultValidate(_ValidateBase):
+    @staticmethod
+    def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
+        dim_1 = tuple(dimensions[param1])
+        dim_2 = tuple(dimensions[param2])
+        param1_is_scalar = is_scalar_shape(dim_1)
+        param2_is_scalar = is_scalar_shape(dim_2)
+        if param1_is_scalar or param2_is_scalar:
+            if param1_is_scalar:
+                return True, dim_2
+            else:
+                return True, dim_1
+        if dim_1 != dim_2:
+            return False, (0, 0)
+        return True, dim_1
+
+
+class _MatrixVecMultValidate(_ValidateBase):
+    @staticmethod
+    def validate_op(param1, param2, param3, dimensions, x_dims, constant_dims):
+        param1_is_vec = any(dim == 1 for dim in dimensions[param1])
+        param2_is_vec = any(dim == 1 for dim in dimensions[param2])
+        if (param1_is_vec and param2_is_vec) or \
+                (not param1_is_vec and not param2_is_vec):
+            return False, (0, 0)
+        else:
+            if dimensions[param1][1] == dimensions[param2][0]:
+                return True, (dimensions[param1][0], dimensions[param2][1])
+            return False, (0, 0)
+
+
 def validate_operator(node, param1, param2, param3, dimensions, x_dims, constant_dims):
     return VALIDATE_MAP[node](param1, param2, param3, dimensions, x_dims, constant_dims)
 
@@ -141,5 +172,7 @@ VALIDATE_MAP = {INTEGER: _IntegerValidate.validate_op,
                 ARCTAN: _ArityOneOperatorWithNoShapeChange.validate_op,
                 ARCCOS: _ArityOneOperatorWithNoShapeChange.validate_op,
                 CROSS: _CrossValidate.validate_op,
-                NORMALIZE: _NormalizeValidate.validate_op}
+                NORMALIZE: _NormalizeValidate.validate_op,
+                ELEMENTWISE_MULT: _ElementWiseMultValidate.validate_op,
+                MATRIX_VEC_MULT: _MatrixVecMultValidate.validate_op}
 # TODO dot product, another operator???

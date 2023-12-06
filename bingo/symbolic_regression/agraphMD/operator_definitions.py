@@ -32,6 +32,8 @@ ARCTAN = 17
 ARCCOS = 18
 CROSS = 20
 NORMALIZE = 21
+ELEMENTWISE_MULT = 22
+MATRIX_VEC_MULT = 23
 
 # (David Randall) Note: Not for use in stacks, purely for string formatting
 #   see normal mult where matrix multiplication can be performed
@@ -59,6 +61,8 @@ IS_ARITY_2_MAP = {INTEGER: False,
                   ARCCOS: False,
                   CROSS: True,
                   NORMALIZE: False,
+                  ELEMENTWISE_MULT: True,
+                  MATRIX_VEC_MULT: True,
                   MATRIX_MULT: True}
 IS_TERMINAL_MAP = {INTEGER: True,
                    VARIABLE: True,
@@ -82,6 +86,8 @@ IS_TERMINAL_MAP = {INTEGER: True,
                    ARCCOS: False,
                    CROSS: False,
                    NORMALIZE: False,
+                   ELEMENTWISE_MULT: False,
+                   MATRIX_VEC_MULT: False,
                    MATRIX_MULT: False}
 OPERATOR_NAMES = {INTEGER: ["integer"],
                   VARIABLE: ["load", "x"],
@@ -107,4 +113,8 @@ OPERATOR_NAMES = {INTEGER: ["integer"],
                            "inverse cos"],
                   CROSS: ["cross", "cross product"],
                   NORMALIZE: ["normalize"],
+                  ELEMENTWISE_MULT: [":", "element-wise multiplication",
+                                     "element-wise *"],
+                  MATRIX_VEC_MULT: ["matrix-vector multiplication", "matrix-vector *",
+                                    "matrix-vec multiplication", "matrix-vec *"],
                   MATRIX_MULT: ["matrix multiplication", "@"]}
