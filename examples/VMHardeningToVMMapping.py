@@ -24,7 +24,7 @@ from bingo.symbolic_regression.explicit_regression_md import ExplicitTrainingDat
 from bingo.symbolic_regression.mapping_fitness_md import MappingFitnessTrainingData, MappingFitness
 
 POP_SIZE = 100
-STACK_SIZE = 10
+STACK_SIZE = 15
 
 
 def get_ideal_eq_1(use_pytorch):
@@ -54,13 +54,24 @@ def get_ideal_eq_1(use_pytorch):
 
 
 def get_ideal_eq(use_pytorch):
+    # cmd_arr = np.array([[1, 0, 3, 3],
+    #                     [1, 1, 0, 0],
+    #                     [0, 0, 0, 0],
+    #                     [4, 1, 2, 0],
+    #                     [1, 2, 0, 0],
+    #                     [2, 3, 4, 0],
+    #                     [4, 0, 5, 0]])
+
     cmd_arr = np.array([[1, 0, 3, 3],
                         [1, 1, 0, 0],
-                        [0, 0, 0, 0],
-                        [4, 1, 2, 0],
                         [1, 2, 0, 0],
-                        [2, 3, 4, 0],
-                        [4, 0, 5, 0]])
+                        [1, 3, 0, 0],
+                        [0, 0, 0, 0],
+                        [4, 3, 4, 0],
+                        [2, 2, 5, 0],
+                        [5, 1, 6, 0],
+                        [4, 0, 7, 0]])
+
     if use_pytorch:
         from bingo.symbolic_regression.agraphMD.pytorch_agraph_md import PytorchAGraphMD
         ideal_eq = PytorchAGraphMD(input_dims=[(0, 0)], output_dim=(3, 3))
@@ -71,8 +82,9 @@ def get_ideal_eq(use_pytorch):
     flattened_params = [1, 0, 0,
                         0, 1, 0,
                         0, 0, 1,
-                        99, 1]
-    ideal_eq.set_local_optimization_params(flattened_params, [(3, 3), (0, 0), (0, 0)])
+                        1, 1, 99]
+    ideal_eq.set_local_optimization_params(flattened_params, [(3, 3), (0, 0), (0, 0), (0, 0)])
+    ideal_eq._needs_opt = True
     print("ideal_eq:", ideal_eq)
     return ideal_eq
 
@@ -92,22 +104,27 @@ def main(use_pytorch=False):
     P_actual = get_numpy_matrix(df, "P_hardening")
     P_desired = get_numpy_matrix(df, "P_vm")
 
-    import dill
-    with open("vm_data_full.pkl", "rb") as f:
-        full_vm_data = dill.load(f)[:953]
-        vm_data = full_vm_data[:, :3].reshape((-1, 3, 1))
-        state_parameters = [full_vm_data[:, 3].reshape((-1))]
+    # import dill
+    # with open("vm_data_full.pkl", "rb") as f:
+    #     full_vm_data = dill.load(f)[:953]
+    #     vm_data = full_vm_data[:, :3].reshape((-1, 3, 1))
+    #     state_parameters = [full_vm_data[:, 3].reshape((-1))]
     mapping_eq = get_ideal_eq(use_pytorch=False)
     mapping_tensors = mapping_eq.evaluate_equation_at(state_parameters)
-    mapping_tensors = np.array([np.linalg.inv(tensor) for tensor in mapping_tensors])
-    print(mapping_tensors.shape)
-    mapped_stress = mapping_tensors @ vm_data
-    P_vm = np.array([[1, -0.5, -0.5],
-                     [-0.5, 1, -0.5],
-                     [-0.5, -0.5, 1]])
-    print((mapped_stress.transpose((0, 2, 1)) @ P_vm @ mapped_stress).flatten())
-    print(df.columns)
-    raise RuntimeError()
+    # mapping_tensors = np.array([np.linalg.inv(tensor) for tensor in mapping_tensors])
+    print(state_parameters[0][0])
+    print(mapping_tensors[0])
+    # print(mapping_tensors.transpose((0, 2, 1)) @ P_actual @ mapping_tensors)
+    print(P_actual[0])
+    print(mapping_tensors.transpose((0, 2, 1)) @ P_desired @ mapping_tensors)
+    # mapping_tensors = np.array([np.linalg.inv(tensor) for tensor in mapping_tensors])
+    # print(mapping_tensors.shape)
+    # mapped_stress = mapping_tensors @ vm_data
+    # P_vm = np.array([[1, -0.5, -0.5],
+    #                  [-0.5, 1, -0.5],
+    #                  [-0.5, -0.5, 1]])
+    # print((mapped_stress.transpose((0, 2, 1)) @ P_vm @ mapped_stress).flatten())
+    # print(df.columns)
 
     x_dims = [(0, 0) if np.shape(x_[0]) == () else np.shape(x_[0]) for x_ in state_parameters]
     y_dim = P_desired[0].shape
@@ -123,8 +140,9 @@ def main(use_pytorch=False):
     component_generator = ComponentGeneratorMD(x_dims, possible_dims=[(3, 3), (0, 0)])
     component_generator.add_operator("+")
     component_generator.add_operator("*")
-    component_generator.add_operator("sin")
-    component_generator.add_operator("cos")
+    # component_generator.add_operator("/")
+    # component_generator.add_operator("sin")
+    # component_generator.add_operator("cos")
     component_generator.add_operator("sqrt")
 
     crossover = AGraphCrossoverMD()
@@ -133,8 +151,10 @@ def main(use_pytorch=False):
                                          use_pytorch=use_pytorch)
 
     fitness = MappingFitness(training_data=training_data)
-    local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='lm', param_init_bounds=[1, 1], options={"factor": 0.1, "xtol": 1e-15, "ftol": 1e-15, "gtol": 1e-15})
-    # local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='lm', param_init_bounds=[1, 1])
+    # local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='lm', param_init_bounds=[1, 1], options={"factor": 0.1, "xtol": 1e-15, "ftol": 1e-15, "gtol": 1e-15, "epsfcn": 1e-2})
+    local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='lm', options={"factor": 0.1, "xtol": 1e-15, "ftol": 1e-15, "gtol": 1e-15})
+    # local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='BFGS')
+    # local_opt_fitness = ContinuousLocalOptimizationMD(fitness, algorithm='lm')
     evaluator = Evaluation(local_opt_fitness, multiprocess=7)
 
     ea = AgeFitnessEA(evaluator, agraph_generator, crossover,

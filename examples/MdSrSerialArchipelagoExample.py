@@ -82,8 +82,8 @@ def main(use_pytorch):
 
 if __name__ == '__main__':
     import random
-    random.seed(7)
-    np.random.seed(7)
+    random.seed(2)
+    np.random.seed(2)
 
     import time
     time_1 = time.perf_counter_ns()

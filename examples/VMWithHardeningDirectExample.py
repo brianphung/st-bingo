@@ -91,6 +91,43 @@ def get_ideal_eq():
     return ideal_eq
 
 
+# def get_ideal_eq():
+#     cmd_arr = np.array([[1, 0, 3, 3],
+#                         [-1, 1, 0, 0],
+#                         [1, 1, 0, 0],
+#                         [1, 2, 0, 0],
+#                         [0, 0, 0, 0],
+#                         [4, 3, 4, 0],
+#                         [4, 5, 4, 0],
+#                         [2, 2, 6, 0],
+#                         [1, 3, 0, 0],
+#                         [4, 8, 4, 0],
+#                         [2, 7, 9, 0],
+#                         [12, 10, 10, 0],
+#                         [5, 1, 11, 0],
+#                         [4, 0, 12, 0]])
+#
+#     # cmd_arr = np.array([[1, 0, 3, 3],
+#     #                     [1, 1, 0, 0],
+#     #                     [0, 0, 0, 0],
+#     #                     [4, 1, 2, 0],
+#     #                     [1, 2, 0, 0],
+#     #                     [2, 3, 4, 0],
+#     #                     [4, 0, 5, 0]])
+#     from bingo.symbolic_regression.agraphMD.pytorch_agraph_md import PytorchAGraphMD
+#     ideal_eq = PytorchAGraphMD(input_dims=[(0, 0)], output_dim=(3, 3))
+#     ideal_eq.command_array = cmd_arr
+#     ideal_eq._update()
+#     flattened_params = [1, 0, 0,
+#                         0, 1, 0,
+#                         0, 0, 1,
+#                         100, -9801, -198]
+#     ideal_eq.set_local_optimization_params(flattened_params, [(3, 3), (0, 0), (0, 0), (0, 0)])
+#     ideal_eq._needs_opt = True
+#     print("ideal_eq:", ideal_eq)
+#     return ideal_eq
+
+
 class ParentAgraphIndv:
     def __init__(self, mapping_indv, P_desired):
         self.mapping_indv = mapping_indv
@@ -158,7 +195,8 @@ class DirectMappingFitness(VectorBasedFunction):
 
 def main():
     with open("vm_data_full.pkl", "rb") as f:
-        data = dill.load(f)[:1000, :4]
+        # data = dill.load(f)[:1000, :4]
+        data = dill.load(f)[:, :4]
     # data = data[~np.all(np.isnan(data), axis=1)]
 
     state_param_dims = [(0, 0)]
@@ -169,7 +207,7 @@ def main():
 
     P_vm = np.array([[1, -0.5, -0.5],
                      [-0.5, 1, -0.5],
-                     [-0.5, -0.5, 1]]) / 100
+                     [-0.5, -0.5, 1]])
     P_vm = torch.from_numpy(P_vm).double()
 
     x, dx_dt, _ = _calculate_partials(data, window_size=7)
@@ -181,12 +219,13 @@ def main():
     implicit_training_data._x = x
     implicit_fitness = ImplicitRegressionMD(implicit_training_data, required_params=4)
 
-    y = np.ones((x_0.shape[0], 1))
+    y = np.ones((x_0.shape[0], 1, 1))
     explicit_training_data = ExplicitTrainingDataMD(x, y)
     explicit_fitness = ExplicitRegressionMD(explicit_training_data)
 
     yield_surface_fitness = DirectMappingFitness(implicit_fitness=implicit_fitness,
-                                                 explicit_fitness=explicit_fitness,
+                                                 # explicit_fitness=explicit_fitness,
+                                                 explicit_fitness=implicit_fitness,
                                                  P_desired=P_vm)
     local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm='lm', param_init_bounds=[-1, 1])
     evaluator = Evaluation(local_opt_fitness, multiprocess=False)

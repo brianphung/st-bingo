@@ -116,7 +116,7 @@ def main():
     # optimizer = ScipyOptimizer(explicit_fitness, method="lm", param_init_bounds=[-1, 1])
     # test_fitness = LocalOptFitnessFunction(implicit_fitness, optimizer)
     test_fitness = MyFitness(implicit_fitness, explicit_fitness, algorithm='lm', param_init_bounds=[-1, 1])
-    evaluator = Evaluation(test_fitness, multiprocess=8)
+    evaluator = Evaluation(test_fitness, multiprocess=2)
 
     ideal_eq = get_ideal_eq()
     print("ideal equation implicit fitness:", implicit_fitness(ideal_eq))

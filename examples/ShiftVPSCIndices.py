@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 if __name__ == "__main__":
-    original_data_name = "vpsc_evo_17_data_3d_points_implicit_format"
+    original_data_name = "vpsc_evo_0_data_3d_points_implicit_format"
     data = np.loadtxt(original_data_name + ".txt")
 
     # get point trajectories by splitting on nan rows
@@ -31,7 +31,7 @@ if __name__ == "__main__":
     for i, yield_surface_points in enumerate(point_trajectories):
         shifted_yield_points = []
         for j in range(n_points_per_yield):
-            shifted_yield_points.append(yield_surface_points[(i * 18 + j) % n_points_per_yield])
+            shifted_yield_points.append(yield_surface_points[(i * 1 + j) % n_points_per_yield])
 
         all_shifted_yield_points.append(shifted_yield_points)
 

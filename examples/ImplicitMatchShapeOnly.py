@@ -27,6 +27,12 @@ def get_ideal_eq():
     return ideal_eq
 
 
+# TODO do this with ellipse latent variable
+#   x becomes a * cos(t) and
+#   y becomes b * sin(t)
+#   finding RHS becomes more complex (e.g., if we have x^2 + y^2, what is r?)
+#   much easier to find RHS if we discover (x^2/a^2 + y^2/b^2 form instead)
+#   can LHS find only x^2 + y^2?
 def get_circle_data():
     t = np.linspace(0, 2 * np.pi, num=30)
     radii = np.linspace(1, 5, num=5)

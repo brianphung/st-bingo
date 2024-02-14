@@ -52,13 +52,30 @@ def get_dx_dt(x_with_nan):
 
 if __name__ == "__main__":
     # data = np.loadtxt("vpsc_evo_17_data_3d_points_implicit_format.txt")
-    data = np.loadtxt("vpsc_evo_17_data_3d_points_implicit_format_shifted_idx.txt")
+    # data = np.loadtxt("vpsc_evo_17_data_3d_points_implicit_format_shifted_idx.txt")
+    # data = np.loadtxt("vpsc_evo_0_data_3d_points_implicit_format.txt")
+    data = np.loadtxt("vpsc_evo_57_data_3d_points_implicit_format.txt")
+    # data = np.loadtxt("vpsc_evo_57_data_3d_points_transpose_implicit_format.txt")
+    # data = np.loadtxt("hill_w_hardening.txt")
+    # data = np.loadtxt("hill_w_hardening_transpose.txt")
+    # data = np.loadtxt("vpsc_evo_0_data_3d_points_implicit_format_shifted_idx.txt")
+    # data = np.loadtxt("vpsc_evo_0_data_3d_points_transpose_implicit_format.txt")
     # data = np.loadtxt("vpsc_evo_16_data_3d_points_implicit_format.txt")
 
-    x, dx_dt, _ = _calculate_partials(data, window_size=5)
+    # x, dx_dt, _ = _calculate_partials(data, window_size=7)
 
     # x = data[np.invert(np.all(np.isnan(data), axis=1))]
     # dx_dt = get_dx_dt(data)
+    # first_yield_surface_i = np.arange(0, 37, 1)
+    # x = np.delete(x, first_yield_surface_i, axis=0)
+    # dx_dt = np.delete(dx_dt, first_yield_surface_i, axis=0)
+
+    # up_vec = np.array([1, 1, 1])
+    # dx_dt[:, :3] = np.array([np.cross(up_vec, vec) for vec in dx_dt[:, :3]])
+
+    # x = x[yield_surface_i::37]
+    # dx_dt = dx_dt[yield_surface_i::37]
+
     #
     # print(x[0])
     # next_index = 1
@@ -76,7 +93,6 @@ if __name__ == "__main__":
     pos = x[:, :3]
     pos_dx_dt = dx_dt[:, :3]
     rot_mat = pi_plane_to_flat_rot()
-    rot_mat /= np.linalg.norm(rot_mat)
 
     fig, axes = plt.subplots(1, 1)
 
@@ -93,7 +109,7 @@ if __name__ == "__main__":
 
     axes.scatter(flat_x, flat_y, s=3)
     # axes.quiver(flat_x, flat_y, dx_dt_x, dx_dt_y, scale=1, scale_units="xy")
-    axes.quiver(flat_x, flat_y, dx_dt_x, dx_dt_y, scale=5, scale_units="xy")
+    axes.quiver(flat_x, flat_y, dx_dt_x, dx_dt_y, scale=1, angles="xy", scale_units="xy")
 
     # deps_dz[:, 0] *= 100
 
