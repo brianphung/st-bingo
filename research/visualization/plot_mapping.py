@@ -1,7 +1,7 @@
 from functools import partial
 import numpy as np
 import matplotlib.pyplot as plt
-from research.utility.rotations import principal_to_pi_plane_rot
+from research.utility.rotations import align_pi_plane_with_axes_rot
 
 
 # YOUR MODELS GO IN HERE
@@ -80,7 +80,7 @@ def get_points_from_yield(yield_fn, coord_ranges, level_to_plot, coord_n=1000):
     _, new_z = np.meshgrid(y, z)
 
     pos_vec = np.dstack([new_x, new_y, new_z])
-    pi_plane_pos = pos_vec @ principal_to_pi_plane_rot()
+    pi_plane_pos = pos_vec @ align_pi_plane_with_axes_rot()
 
     # evaluate yield surface at meshgrid points
     h = np.zeros((pos_vec.shape[0], pos_vec.shape[1]))
@@ -149,25 +149,25 @@ def get_contour_values_per_yield_surface(principal_stress_points, all_eps_values
 
 
 if __name__ == "__main__":
-
-    data = np.loadtxt("../data/vpsc_evo_57_data_3d_points_implicit_format.txt")
+    data = np.loadtxt("../data/processed_data/vpsc_57_bingo_format.txt")
     data = data[np.invert(np.all(np.isnan(data), axis=1))]
+    points_per_yield_surface = 37
 
     yield_points_3d = data[:, :3]
     all_eps = data[:, 3][:, None, None]
-    yield_points_pi_plane = (yield_points_3d @ principal_to_pi_plane_rot())[:, :2]
+    yield_points_pi_plane = (yield_points_3d @ align_pi_plane_with_axes_rot())[:, :2]
 
     coord_range = [-600, 600]
 
     mappings = get_mapping_matrices(all_eps)
     mapped_points_3d = (mappings @ yield_points_3d[:, :, None]).squeeze()
-    mapped_points_pi_plane = (mapped_points_3d @ principal_to_pi_plane_rot())[:, :2]
+    mapped_points_pi_plane = (mapped_points_3d @ align_pi_plane_with_axes_rot())[:, :2]
 
     fig = plt.figure()
     ax = fig.add_subplot()
 
     def plot_yield_surfaces():
-        yield_surface_contours = np.array(get_contour_values_per_yield_surface(yield_points_3d.reshape((-1, 3, 1)), all_eps, 37))
+        yield_surface_contours = np.array(get_contour_values_per_yield_surface(yield_points_3d.reshape((-1, 3, 1)), all_eps, points_per_yield_surface))
         print("yield surface contour levels:", yield_surface_contours)
         print()
         for i, eps_to_plot in enumerate(np.unique(all_eps)):

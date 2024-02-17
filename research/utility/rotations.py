@@ -1,9 +1,9 @@
 import numpy as np
 
 
-def principal_to_pi_plane_rot():
+def align_pi_plane_with_axes_rot():
     """
-    Returns a matrix that rotates pi plane's normal to be the z axis
+    Returns a matrix that rotates the pi plane's normal to be the z axis
     i.e., a slice of pi plane becomes the xy plane after rotation
     """
     pi_vector = np.array([1, 1, 1]) / np.sqrt(3.)
@@ -17,5 +17,8 @@ def principal_to_pi_plane_rot():
     return rot_mat
 
 
-def pi_plane_to_principal_rot():
-    return np.linalg.inv(principal_to_pi_plane_rot())
+def align_axes_with_pi_plane_rot():
+    """
+    Returns a matrix that undoes the align_pi_plane_with_axes_rot rotation
+    """
+    return np.linalg.inv(align_pi_plane_with_axes_rot())
