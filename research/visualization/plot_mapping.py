@@ -149,7 +149,7 @@ def draw_principal_axes(ax, length_of_axes=2.5, scale=100):
 
 
 def get_contour_values_per_yield_surface(principal_stress_points, all_eps_values,
-                                         mapping_model, points_per_yield_surface=36):
+                                         mapping_model, n_yield_surfaces):
     """
     Get the yield stress values of yield surfaces according to get_yield function
     defined above and passed in plastic strain values, all_eps_values
@@ -158,7 +158,6 @@ def get_contour_values_per_yield_surface(principal_stress_points, all_eps_values
     have to multiply out the normalizing term so the yield stresses will vary
     """
     original_yield_values = get_yield(principal_stress_points, eps=all_eps_values, mapping_model=mapping_model)
-    n_yield_surfaces = (data.shape[0] // points_per_yield_surface)
 
     contour_values = []
     for yield_fn_i in range(n_yield_surfaces):
@@ -170,75 +169,150 @@ def get_contour_values_per_yield_surface(principal_stress_points, all_eps_values
     return contour_values
 
 
-if __name__ == "__main__":
-    data = np.loadtxt("../data/processed_data/vpsc_57_bingo_format.txt")
-    # data = np.loadtxt("../data/processed_data/hill_w_hardening.txt")
-    data = data[np.invert(np.all(np.isnan(data), axis=1))]
-    points_per_yield_surface = 37
+def plot_mapping(formatted_data_path, mapping_model,
+                 range_to_sample_contours,
+                 *,
+                 plot_original_points, plot_mapped_points,
+                 plot_yield_surfaces,
+                 drawn_axes_length=None, drawn_axes_scale=None,
+                 figure_range=None):
+    """
+    Plots the yield points provided from formatted data path, their
+    mapped versions according to the provided mapping model, and the
+    mapped yield surface implied by the provided mapping model.
+    :param formatted_data_path: Data path of the yield surface data
+    formatted for bingo.
+    :param mapping_model: Model that outputs mapping matrices based on a
+    provided state parameter
+    :param range_to_sample_contours: Coordinate range in which to sample
+    the yield contours/surfaces
+    :param drawn_axes_length: The length of the drawn principal stress
+    axes
+    :param drawn_axes_scale: A quantity that adjusts how far the $sigma_i$
+    symbols are away from the drawn principal stress axes
+    :param plot_original_points: Whether to plot the original yield points
+    :param plot_mapped_points: Whether to plot the mapped yield points
+    :param plot_yield_surfaces: Whether to plot the implied yield
+    contours/surfaces or not
+    :param figure_range: The range of the figure's axes
+    """
+    if figure_range is None:
+        figure_range = range_to_sample_contours
 
+    # load data
+    data = np.loadtxt(formatted_data_path)
+    nan_rows = np.all(np.isnan(data), axis=1)
+    n_yield_surfaces = np.argmax(nan_rows)
+    data = data[np.invert(nan_rows)]
+
+    print("n of yield surfaces:", n_yield_surfaces)
+
+    # get yield points and eps values
     yield_points_3d = data[:, :3]
     all_eps = data[:, 3][:, None, None]
     yield_points_pi_plane = (yield_points_3d @ align_pi_plane_with_axes_rot())[:, :2]
 
-    coord_range = [-600, 600]
-    model = vpsc_57_mapping_model
-
-    # coord_range = [-60, 60]
-    # model = hill_mapping_model
-
-    mappings = model(all_eps)
+    # get mapped yield points
+    mappings = mapping_model(all_eps)
     mapped_points_3d = (mappings @ yield_points_3d[:, :, None]).squeeze()
     mapped_points_pi_plane = (mapped_points_3d @ align_pi_plane_with_axes_rot())[:, :2]
 
     fig = plt.figure()
     ax = fig.add_subplot()
 
-    def plot_yield_surfaces():
-        yield_surface_contours = np.array(get_contour_values_per_yield_surface(yield_points_3d.reshape((-1, 3, 1)), all_eps, model, points_per_yield_surface))
+    def _plot_yield_surfaces():
+        # get yield contour values as determined by mapping_model
+        yield_surface_contours = get_contour_values_per_yield_surface(
+            yield_points_3d.reshape((-1, 3, 1)),
+            all_eps,
+            mapping_model,
+            n_yield_surfaces
+        )
+        yield_surface_contours = np.array(yield_surface_contours)
         print("yield surface contour levels:", yield_surface_contours)
-        print()
+
+        # plot each yield surface contour
         for i, eps_to_plot in enumerate(np.unique(all_eps)):
             level = yield_surface_contours[i]
 
-            yield_fn = partial(get_yield, eps=eps_to_plot, mapping_model=model)
-            fn_yield_points, _ = get_points_from_yield(yield_fn, coord_range,
-                                                       level_to_plot=level,
-                                                       coord_n=100)
-            print(f"n of points from yield contour {i}:", len(fn_yield_points))
-        print()
+            yield_fn = partial(
+                get_yield,
+                eps=eps_to_plot,
+                mapping_model=mapping_model
+            )
+            fn_yield_points, _ = get_points_from_yield(
+                yield_fn,
+                range_to_sample_contours,
+                level_to_plot=level,
+                coord_n=100
+            )
+            # print(f"n of points from yield contour {i}:", len(fn_yield_points))
 
-    def plot_real_points():
+    def _plot_real_points():
         return ax.scatter(*yield_points_pi_plane.T, s=5, label="actual")
 
-    def plot_mapped_points():
+    def _plot_mapped_points():
         return ax.scatter(*mapped_points_pi_plane.T, s=5, label="mapped")
 
-    plot_yield_surfaces()
-    real_handle = plot_real_points()
+    legend_handles = []
+    legend_labels = []
+    if plot_original_points:
+        real_handle = _plot_real_points()
+        legend_handles.append(real_handle)
+        legend_labels.append("yield points")
 
-    average_scale_between_mapped_and_actual = np.median(np.mean(yield_points_pi_plane / mapped_points_pi_plane, axis=1))
-    print("average scale between mapped and actual points:", average_scale_between_mapped_and_actual)
-    if np.abs(average_scale_between_mapped_and_actual) > 10 or np.abs(average_scale_between_mapped_and_actual) < 0.1:
-        print(f"\t\033[91mWarning: Average scale between average and mapped points is high")
-        print("\tTo fix this, scale the mapping individual by the average shown above")
-        print("\t ... automatically scaling by points by average")
-        mapped_points_pi_plane *= average_scale_between_mapped_and_actual
+    if plot_mapped_points:
+        # determine average scale between mapped and actual yield points,
+        # print error message if too large or small
+        average_scale_between_mapped_and_actual = np.median(np.mean(yield_points_pi_plane / mapped_points_pi_plane, axis=1))
+        print("average scale between mapped and actual points:", average_scale_between_mapped_and_actual)
+        if np.abs(average_scale_between_mapped_and_actual) > 10 or np.abs(average_scale_between_mapped_and_actual) < 0.1:
+            print(f"\t\033[91mWarning: Average scale between average and mapped points is high")
+            print("\tTo fix this, scale the mapping individual by the average shown above")
+            print("\t ... automatically scaling by points by average")
+            mapped_points_pi_plane *= average_scale_between_mapped_and_actual
 
-    mapped_handle = plot_mapped_points()
+        mapped_handle = _plot_mapped_points()
+        legend_handles.append(mapped_handle)
+        legend_labels.append("mapped points")
 
-    draw_principal_axes(ax, length_of_axes=550)
+    if plot_yield_surfaces:
+        _plot_yield_surfaces()
+        yield_surface_legend_rectangle = plt.Rectangle((0, 0), 1, 1, fc="purple")
+        legend_handles.append(yield_surface_legend_rectangle)
+        legend_labels.append("found yield surface")
 
-    # draw_principal_axes(ax, length_of_axes=42, scale=10)
+    draw_principal_axes(ax, length_of_axes=drawn_axes_length, scale=drawn_axes_scale)
 
-    # coord_range = [-60, 60]
     ax.axis("equal")
-    ax.set_xlim(*coord_range)
-    ax.set_ylim(*coord_range)
+    ax.set_xlim(*figure_range)
+    ax.set_ylim(*figure_range)
 
-    yield_surface_legend_rectangle = plt.Rectangle((0, 0), 1, 1, fc="purple")
-    # ax.legend(handles=[real_handle, mapped_handle, yield_surface_legend_rectangle], labels=["yield points", "mapped points", "found yield surface"])
-    ax.legend(handles=[real_handle, mapped_handle], labels=["yield points", "mapped points"])
+    ax.legend(handles=legend_handles, labels=legend_labels)
     ax.set_xlabel("$S_1$ (MPa)")
     ax.set_ylabel("$S_2$ (MPa)")
 
     plt.show()
+
+
+if __name__ == "__main__":
+    # plot vspc mapped points
+    print("plotting vpsc results:")
+    vpsc_data_path = "../data/processed_data/vpsc_57_bingo_format.txt"
+    plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
+                 plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
+                 drawn_axes_length=550, drawn_axes_scale=100)
+    print()
+
+    # plot vpsc mapped yield surface
+    plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
+                 plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
+                 drawn_axes_length=550, drawn_axes_scale=100)
+    print()
+
+    print("plotting hill results:")
+    # plot hill mapped points
+    hill_data_path = "../data/processed_data/hill_w_hardening.txt"
+    plot_mapping(hill_data_path, hill_mapping_model, [-40, 40],
+                 plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
+                 drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-60, 60])
