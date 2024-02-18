@@ -188,9 +188,8 @@ if __name__ == "__main__":
 
     plot_yield_surfaces()
     real_handle = plot_real_points()
-    # mapped_points_pi_plane *= np.mean(np.mean(yield_points_pi_plane / mapped_points_pi_plane, axis=1))
 
-    average_scale_between_mapped_and_actual = np.mean(np.mean(yield_points_pi_plane / mapped_points_pi_plane, axis=1))
+    average_scale_between_mapped_and_actual = np.median(np.mean(yield_points_pi_plane / mapped_points_pi_plane, axis=1))
     print("average scale between mapped and actual points:", average_scale_between_mapped_and_actual)
     if np.abs(average_scale_between_mapped_and_actual) > 10 or np.abs(average_scale_between_mapped_and_actual) < 0.1:
         print(f"\t\033[91mWarning: Average scale between average and mapped points is high")
