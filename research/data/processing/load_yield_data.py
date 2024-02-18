@@ -31,6 +31,7 @@ def get_yield_surfaces_df(n, folder_path, plot=False):
         lines_in_file = i + 1
     pcys_file.close()
 
+    # get stress and strain info from STR_STR.OUT
     ss_file = open(f"{folder_path}/{n}/STR_STR.OUT", "r")
     strain_sections = []
     stress_sections = []
@@ -43,7 +44,6 @@ def get_yield_surfaces_df(n, folder_path, plot=False):
             line = [float(entry) for entry in line]
             strain_sections[-1].append(line[4])  # E33
             stress_sections[-1].append(line[10])  # S_DEV_33
-
     ss_file.close()
 
     yield_surface_point_sets = []
@@ -53,19 +53,23 @@ def get_yield_surfaces_df(n, folder_path, plot=False):
 
         vpsc_data = pd.read_csv(f"{folder_path}/{n}/PCYS.OUT", delim_whitespace=True, skiprows=lambda x: x not in rows_to_read)
 
-        xy_points = vpsc_data[["S1", "S2"]].to_numpy()
+        two_d_dev_points = vpsc_data[["S1", "S2"]].to_numpy()
 
         if i == 0:
             yield_surface_eps.append(strain_sections[i][0])
-            z_point = stress_sections[i][0]
+            s_dev_33 = stress_sections[i][0]
         else:
             yield_surface_eps.append(strain_sections[i-1][-1])
-            z_point = stress_sections[i-1][-1]
+            s_dev_33 = stress_sections[i-1][-1]
 
-        # use the same S_DEV_33 value for all points in this yield surface
-        z_points = np.repeat(np.array([[z_point]]), len(xy_points), axis=0)
-        points = np.hstack((xy_points, z_points))
-        yield_surface_point_sets.append(points)
+        # use the same s_dev_33 value for all points in this yield surface
+        all_s_dev_33s = np.repeat(np.array([[s_dev_33]]), len(two_d_dev_points), axis=0)
+
+        # combine S1, S2, and S_33 to get deviatoric points
+        # might not be sound to do this, but the S_33 component doesn't
+        # play a factor in the mapping process anyway
+        dev_points = np.hstack((two_d_dev_points, all_s_dev_33s))
+        yield_surface_point_sets.append(dev_points)
 
     yield_surface_rows = []
     for i, yield_surface_point_set in enumerate(yield_surface_point_sets):
