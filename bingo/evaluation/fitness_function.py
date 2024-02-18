@@ -24,7 +24,7 @@ def mean_squared_error(vector):
     return np.mean(np.square(vector))
 
 
-class FitnessFunction(metaclass=ABCMeta):
+class FitnessFunction:
     """Fitness evaluation metric for individuals.
 
     An abstract base class for the fitness evaluation of genetic individuals
@@ -68,7 +68,7 @@ class FitnessFunction(metaclass=ABCMeta):
         raise NotImplementedError
 
 
-class VectorBasedFunction(FitnessFunction, metaclass=ABCMeta):
+class VectorBasedFunction(FitnessFunction):
     """Fitness evaluation based on vectorized fitness
 
     Parameters
