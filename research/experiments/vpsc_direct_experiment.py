@@ -1,6 +1,11 @@
+from math import floor
+
 import numpy as np
 import torch
 torch.set_num_threads(1)
+
+import multiprocessing
+CPU_COUNT = multiprocessing.cpu_count()
 
 from bingo.evaluation.fitness_function import VectorBasedFunction
 from bingo.evolutionary_algorithms.age_fitness import AgeFitnessEA
@@ -18,10 +23,18 @@ from bingo.symbolic_regression.implicit_regression_md import ImplicitRegressionM
     _calculate_partials
 
 POP_SIZE = 100
-STACK_SIZE = 15
+STACK_SIZE = 10
 
 
 class ParentAgraphIndv:
+    """
+    Parent agraph that takes in a mapping individual that returns mapping
+    matrices based on state parameters (plastic strain measure in our case). It
+    uses the mapping matrices to transform P_desired/P_fict into P_real.
+
+    Basically this takes mapping individual $f(\alpha)$ (where $\alpha$ are
+    state parameters) and converts it to $f(\alpha).T @ P_desired @ f(\alpha)$
+    """
     def __init__(self, mapping_indv, P_desired):
         self.mapping_indv = mapping_indv
         self.P_desired = P_desired
@@ -65,6 +78,11 @@ class ParentAgraphIndv:
 
 
 class DirectMappingFitness(VectorBasedFunction):
+    """
+    Evaluates a given mapping individual by converting it to a parent agraph
+    as described above and then evaluating said agraph on the provided
+    explicit and implicit fitness functions.
+    """
     def __init__(self, *, explicit_fitness, implicit_fitness, P_desired):
         super().__init__(metric="rmse")
         self.implicit_fitness = implicit_fitness
@@ -81,8 +99,12 @@ class DirectMappingFitness(VectorBasedFunction):
         return total_fitness
 
 
-from bingo.evaluation.fitness_function import VectorBasedFunction
-class ParentAGraphFitness(VectorBasedFunction):
+class ParentFitnessToChildFitness(VectorBasedFunction):
+    """
+    Transforms a fitness function for the parent into a fitness
+    function for its child by converting the child to a parent agraph
+    before evaluating it on the provided fitness function for the parent.
+    """
     def __init__(self, *, fitness_for_parent, P_desired):
         super().__init__(metric="mse")
         self.fitness_fn = fitness_for_parent
@@ -90,18 +112,43 @@ class ParentAGraphFitness(VectorBasedFunction):
 
     def evaluate_fitness_vector(self, individual):
         parent_agraph = ParentAgraphIndv(individual, self.P_desired)
+
+        # evaluate the child individual on the state parameter to get the mapping matrices
         mapping_matrices = individual.evaluate_equation_at([self.fitness_fn.training_data.x[1]])
 
         P_mapped = mapping_matrices.transpose((0, 2, 1)) @ self.P_desired.detach().numpy() @ mapping_matrices
 
+        # normalize against the plane solution by using inverse of coefficient of variation
         normalization_fitness = 2 * np.mean(P_mapped, axis=(1, 2)) / np.std(P_mapped + P_mapped.transpose((0, 2, 1)), axis=(1, 2))
 
         fitness = self.fitness_fn.evaluate_fitness_vector(parent_agraph)
         return np.hstack((fitness, normalization_fitness))
 
 
-def main():
-    dataset_path = "../data/vpsc_evo_57_data_3d_points_implicit_format.txt"
+class DoubleFitness(VectorBasedFunction):
+    """
+    Evaluates the provided individual on both the provided
+    explicit and implicit fitness functions and returns the concatenated fitness
+    vectors of them
+    """
+    def __init__(self, *, explicit_fitness, implicit_fitness):
+        super().__init__(metric="mse")
+        self.implicit_fitness = implicit_fitness
+        self.explicit_fitness = explicit_fitness
+
+    def evaluate_fitness_vector(self, individual):
+        implicit = self.implicit_fitness.evaluate_fitness_vector(individual)
+        explicit = self.explicit_fitness.evaluate_fitness_vector(individual)
+
+        total_fitness = np.hstack((implicit, explicit))
+
+        return total_fitness
+
+
+def run_experiment():
+    dataset_path = "../data/processed_data/vpsc_57_bingo_format.txt"
+    transposed_dataset_path = "../data/processed_data/vpsc_57_transpose_bingo_format.txt"
+
     data = np.loadtxt(dataset_path)
     print("running w/ dataset:", dataset_path)
 
@@ -113,7 +160,7 @@ def main():
 
     x, dx_dt, _ = _calculate_partials(data, window_size=5)
 
-    transposed_data = np.loadtxt("../data/vpsc_evo_57_data_3d_points_transpose_implicit_format.txt")
+    transposed_data = np.loadtxt(transposed_dataset_path)
     x_transposed, dx_dt_transposed, _ = _calculate_partials(transposed_data, window_size=5)
 
     x = np.vstack((x, x_transposed))
@@ -135,13 +182,17 @@ def main():
                      [-0.5, -0.5, 1]])
     P_vm = torch.from_numpy(P_vm).double()
 
+    parent_explicit = ParentFitnessToChildFitness(fitness_for_parent=explicit_fitness, P_desired=P_vm)
+    parent_implicit = ParentFitnessToChildFitness(fitness_for_parent=implicit_fitness, P_desired=P_vm)
 
-    yield_surface_fitness = DirectMappingFitness(implicit_fitness=implicit_fitness,
-                                                 explicit_fitness=explicit_fitness,
-                                                 P_desired=P_vm)
+    yield_surface_fitness = DoubleFitness(implicit_fitness=parent_implicit, explicit_fitness=parent_explicit)
 
     local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1])
-    evaluator = Evaluation(local_opt_fitness, multiprocess=5)
+
+    # downscale CPU_COUNT to avoid resource conflicts
+    N_CPUS_TO_USE = floor(CPU_COUNT * 0.9)
+    print(f"using {N_CPUS_TO_USE}/{CPU_COUNT} cpus")
+    evaluator = Evaluation(local_opt_fitness, multiprocess=N_CPUS_TO_USE)
 
     component_generator = ComponentGeneratorMD(state_param_dims, possible_dims=[(3, 3), (0, 0)])
     component_generator.add_operator("+")
@@ -156,7 +207,6 @@ def main():
     ea = AgeFitnessEA(evaluator, agraph_generator, crossover, mutation, 0.3, 0.6, POP_SIZE)
 
     def agraph_similarity(ag_1, ag_2):
-        """a similarity metric between agraphs"""
         return ag_1.fitness == ag_2.fitness and ag_1.get_complexity() == ag_2.get_complexity()
 
     pareto_front = ParetoFront(secondary_key=lambda ag: ag.get_complexity(),
@@ -176,4 +226,4 @@ if __name__ == '__main__':
     # random.seed(7)
     # np.random.seed(7)
 
-    main()
+    run_experiment()
