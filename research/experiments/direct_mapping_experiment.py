@@ -1,4 +1,5 @@
 from math import floor
+import os
 
 import numpy as np
 import torch
@@ -233,13 +234,22 @@ def run_experiment(dataset_path,
 
 
 if __name__ == '__main__':
+    # make checkpoint folders if they don't exist
+    vpsc_checkpoint_path = "checkpoints/vpsc"
+    if not os.path.exists(vpsc_checkpoint_path):
+        os.makedirs(vpsc_checkpoint_path)
+
+    hill_checkpoint_path = "checkpoints/hill"
+    if not os.path.exists(hill_checkpoint_path):
+        os.makedirs(hill_checkpoint_path)
+
     # run vpsc experiment
     vpsc_data_path = "../data/processed_data/vpsc_57_bingo_format.txt"
     vpsc_transposed_data_path = "../data/processed_data/vpsc_57_transpose_bingo_format.txt"
     run_experiment(vpsc_data_path,
                    vpsc_transposed_data_path,
                    max_generations=100,
-                   checkpoint_path="checkpoints/vpsc")
+                   checkpoint_path=vpsc_checkpoint_path)
 
     # run hill experiment
     # hill_data_path = "../data/processed_data/hill_w_hardening.txt"
@@ -247,4 +257,4 @@ if __name__ == '__main__':
     # run_experiment(hill_data_path,
     #                hill_transposed_data_path,
     #                max_generations=100,
-    #                checkpoint_path="checkpoints/hill")
+    #                checkpoint_path=hill_checkpoint_path)
