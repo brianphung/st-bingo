@@ -1,6 +1,6 @@
 import numpy as np
 
-from research.data.processing.load_yield_data import get_yield_surfaces_df
+from research.data.processing.load_vpsc_data import get_yield_surfaces_df
 from research.utility.rotations import align_axes_with_pi_plane_rot
 
 

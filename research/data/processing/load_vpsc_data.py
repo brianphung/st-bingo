@@ -1,6 +1,6 @@
 """
-Module for loading yield surface data from raw data. For getting formatted data
-for bingo, see format_for_bingo.py.
+Module for loading yield surface data from raw VPSC data.
+For getting formatted data for bingo, see format_for_bingo.py.
 """
 
 import numpy as np
