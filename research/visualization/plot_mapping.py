@@ -4,12 +4,7 @@ import matplotlib.pyplot as plt
 from research.utility.rotations import align_pi_plane_with_axes_rot
 
 
-# YOUR MODELS GO IN HERE
-def get_mapping_matrices(eps):
-    """
-    Get fictitious to real mapping matrices as a function of plastic strain
-    parameter, eps
-    """
+def hill_mapping_model(eps):
     from numpy import sin, cos, array
 
     # bingo uses sqrt(|x|) as sqrt(x)
@@ -21,10 +16,9 @@ def get_mapping_matrices(eps):
         eps = np.array([eps])[:, None, None]
 
     # input your individual here
-    eq = (array(1.63758226) + X_0 + array(1.63758226) * array(1.63758226)) * \
-         array([[-0.15209117,  0.28993651, -0.09041072],
-                [-0.10268386,  0.32717832, -0.17758408],
-                [-0.04955914,  0.25161243, -0.15798345]])
+    eq = X_0 * array([[4.84938514, -1.39136693, 3.57891267],
+                      [0.92418741, 2.16747212, 3.7473522],
+                      [2.52797065, 1.72322281, 2.07687239]])
 
     scaling_factor = 1.0
     # set scaling factor if needed (e.g., if average scale is too large)
@@ -36,7 +30,34 @@ def get_mapping_matrices(eps):
     return eq
 
 
-def get_yield(principal_stress, eps=0.0):
+def vpsc_57_mapping_model(eps):
+    from numpy import sin, cos, array
+
+    # bingo uses sqrt(|x|) as sqrt(x)
+    def sqrt(x):
+        return np.sqrt(np.abs(x))
+
+    X_0 = eps
+    if not isinstance(eps, np.ndarray):
+        eps = np.array([eps])[:, None, None]
+
+    # input your individual here
+    eq = (0.00022751 * X_0 + 5.29761659) * \
+         array([[-0.22488406, 0.39036446, 0.23017129],
+                [-0.09263297, 0.41016726, 0.07469385],
+                [-0.25825709, 0.51208763, 0.13926473]])
+
+    scaling_factor = 1.0
+    # set scaling factor if needed (e.g., if average scale is too large)
+    eq *= scaling_factor
+
+    if eq.shape[0] != eps.shape[0]:
+        eq = np.repeat(eq[None, :, :], eps.shape[0], axis=0)
+
+    return eq
+
+
+def get_yield(principal_stress, *, eps=0.0, mapping_model):
     """
     Get real yield stress values as a function of plastic strain using the
     mapping provided above
@@ -47,7 +68,7 @@ def get_yield(principal_stress, eps=0.0):
     if isinstance(eps, np.ndarray) and eps.ndim == 2:
         eps = np.expand_dims(eps, 0)
 
-    mapping_matrix = get_mapping_matrices(eps)
+    mapping_matrix = mapping_model(eps)
 
     P_fict = np.array([[1, -0.5, -0.5],
                        [-0.5, 1, -0.5],
@@ -127,7 +148,8 @@ def draw_principal_axes(ax, length_of_axes=2.5, scale=100):
     # ax.annotate(r"$\sigma_3$", bottom_left_pos + np.array([-0.18, -0.4]) * scale)
 
 
-def get_contour_values_per_yield_surface(principal_stress_points, all_eps_values, points_per_yield_surface=36):
+def get_contour_values_per_yield_surface(principal_stress_points, all_eps_values,
+                                         mapping_model, points_per_yield_surface=36):
     """
     Get the yield stress values of yield surfaces according to get_yield function
     defined above and passed in plastic strain values, all_eps_values
@@ -135,7 +157,7 @@ def get_contour_values_per_yield_surface(principal_stress_points, all_eps_values
     If your equation is only outputting one yield stress value, then you will
     have to multiply out the normalizing term so the yield stresses will vary
     """
-    original_yield_values = get_yield(principal_stress_points, all_eps_values)
+    original_yield_values = get_yield(principal_stress_points, eps=all_eps_values, mapping_model=mapping_model)
     n_yield_surfaces = (data.shape[0] // points_per_yield_surface)
 
     contour_values = []
@@ -150,6 +172,7 @@ def get_contour_values_per_yield_surface(principal_stress_points, all_eps_values
 
 if __name__ == "__main__":
     data = np.loadtxt("../data/processed_data/vpsc_57_bingo_format.txt")
+    # data = np.loadtxt("../data/processed_data/hill_w_hardening.txt")
     data = data[np.invert(np.all(np.isnan(data), axis=1))]
     points_per_yield_surface = 37
 
@@ -158,8 +181,12 @@ if __name__ == "__main__":
     yield_points_pi_plane = (yield_points_3d @ align_pi_plane_with_axes_rot())[:, :2]
 
     coord_range = [-600, 600]
+    model = vpsc_57_mapping_model
 
-    mappings = get_mapping_matrices(all_eps)
+    # coord_range = [-60, 60]
+    # model = hill_mapping_model
+
+    mappings = model(all_eps)
     mapped_points_3d = (mappings @ yield_points_3d[:, :, None]).squeeze()
     mapped_points_pi_plane = (mapped_points_3d @ align_pi_plane_with_axes_rot())[:, :2]
 
@@ -167,13 +194,13 @@ if __name__ == "__main__":
     ax = fig.add_subplot()
 
     def plot_yield_surfaces():
-        yield_surface_contours = np.array(get_contour_values_per_yield_surface(yield_points_3d.reshape((-1, 3, 1)), all_eps, points_per_yield_surface))
+        yield_surface_contours = np.array(get_contour_values_per_yield_surface(yield_points_3d.reshape((-1, 3, 1)), all_eps, model, points_per_yield_surface))
         print("yield surface contour levels:", yield_surface_contours)
         print()
         for i, eps_to_plot in enumerate(np.unique(all_eps)):
             level = yield_surface_contours[i]
 
-            yield_fn = partial(get_yield, eps=eps_to_plot)
+            yield_fn = partial(get_yield, eps=eps_to_plot, mapping_model=model)
             fn_yield_points, _ = get_points_from_yield(yield_fn, coord_range,
                                                        level_to_plot=level,
                                                        coord_n=100)
@@ -201,13 +228,16 @@ if __name__ == "__main__":
 
     draw_principal_axes(ax, length_of_axes=550)
 
+    # draw_principal_axes(ax, length_of_axes=42, scale=10)
+
+    # coord_range = [-60, 60]
     ax.axis("equal")
     ax.set_xlim(*coord_range)
     ax.set_ylim(*coord_range)
 
     yield_surface_legend_rectangle = plt.Rectangle((0, 0), 1, 1, fc="purple")
-    ax.legend(handles=[real_handle, mapped_handle, yield_surface_legend_rectangle], labels=["yield points", "mapped points", "found yield surface"])
-    # ax.legend(handles=[real_handle, mapped_handle], labels=["yield points", "mapped points"])
+    # ax.legend(handles=[real_handle, mapped_handle, yield_surface_legend_rectangle], labels=["yield points", "mapped points", "found yield surface"])
+    ax.legend(handles=[real_handle, mapped_handle], labels=["yield points", "mapped points"])
     ax.set_xlabel("$S_1$ (MPa)")
     ax.set_ylabel("$S_2$ (MPa)")
 
