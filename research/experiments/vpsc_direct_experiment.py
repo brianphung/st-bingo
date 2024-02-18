@@ -145,34 +145,38 @@ class DoubleFitness(VectorBasedFunction):
         return total_fitness
 
 
-def run_experiment():
-    dataset_path = "../data/processed_data/vpsc_57_bingo_format.txt"
-    transposed_dataset_path = "../data/processed_data/vpsc_57_transpose_bingo_format.txt"
-
+def run_experiment(dataset_path,
+                   transposed_dataset_path,
+                   max_generations=100,
+                   checkpoint_path="checkpoints"):
+    # load data
     data = np.loadtxt(dataset_path)
+    transposed_data = np.loadtxt(transposed_dataset_path)
     print("running w/ dataset:", dataset_path)
 
     state_param_dims = [(0, 0)]
-
     output_dim = (3, 3)
-    print("Dimensions of X variables:", state_param_dims)
-    print("Dimension of output:", output_dim)
 
+    # get local derivatives from data
     x, dx_dt, _ = _calculate_partials(data, window_size=5)
-
-    transposed_data = np.loadtxt(transposed_dataset_path)
     x_transposed, dx_dt_transposed, _ = _calculate_partials(transposed_data, window_size=5)
 
+    # combine normal and transposed data
     x = np.vstack((x, x_transposed))
     dx_dt = np.vstack((dx_dt, dx_dt_transposed))
 
+    # implicit fitness function to match local derivatives
     implicit_training_data = ImplicitTrainingDataMD(x, dx_dt)
+
+    # convert numpy arrays into pytorch tensors
     x_0 = torch.from_numpy(implicit_training_data._x[:, :3].reshape((-1, 3, 1))).double()
     x_1 = torch.from_numpy(implicit_training_data._x[:, 3].reshape((-1))).double()
     x = [x_0, x_1]
     implicit_training_data._x = x
     implicit_fitness = ImplicitRegressionMD(implicit_training_data, required_params=4)
 
+
+    # explicit fitness function to make yield stress constant per yield surface
     y = np.ones((x_0.size(0), 1, 1))
     explicit_training_data = ExplicitTrainingDataMD(x, y)
     explicit_fitness = ExplicitRegressionMD(explicit_training_data)
@@ -182,9 +186,11 @@ def run_experiment():
                      [-0.5, -0.5, 1]])
     P_vm = torch.from_numpy(P_vm).double()
 
+    # convert fitness functions to child fitness functions
     parent_explicit = ParentFitnessToChildFitness(fitness_for_parent=explicit_fitness, P_desired=P_vm)
     parent_implicit = ParentFitnessToChildFitness(fitness_for_parent=implicit_fitness, P_desired=P_vm)
 
+    # combine implicit and explicit fitness functions
     yield_surface_fitness = DoubleFitness(implicit_fitness=parent_implicit, explicit_fitness=parent_explicit)
 
     local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1])
@@ -194,6 +200,7 @@ def run_experiment():
     print(f"using {N_CPUS_TO_USE}/{CPU_COUNT} cpus")
     evaluator = Evaluation(local_opt_fitness, multiprocess=N_CPUS_TO_USE)
 
+    # setup archipelago
     component_generator = ComponentGeneratorMD(state_param_dims, possible_dims=[(3, 3), (0, 0)])
     component_generator.add_operator("+")
     component_generator.add_operator("*")
@@ -213,17 +220,32 @@ def run_experiment():
                                similarity_function=agraph_similarity)
 
     island = Island(ea, agraph_generator, POP_SIZE, hall_of_fame=pareto_front)
-    island.evolve(1)
 
-    island.evolve_until_convergence(max_generations=10, fitness_threshold=1e-5)
+    # start run
+    island.evolve(1)
+    island.evolve_until_convergence(max_generations=max_generations,
+                                    fitness_threshold=1e-5,
+                                    convergence_check_frequency=10,
+                                    num_checkpoints=3,
+                                    checkpoint_base_name=f"{checkpoint_path}/checkpoint")
 
     print("Finished bingo run, pareto front is:")
     print(pareto_front)
 
 
 if __name__ == '__main__':
-    # import random
-    # random.seed(7)
-    # np.random.seed(7)
+    # run vpsc experiment
+    vpsc_data_path = "../data/processed_data/vpsc_57_bingo_format.txt"
+    vpsc_transposed_data_path = "../data/processed_data/vpsc_57_transpose_bingo_format.txt"
+    run_experiment(vpsc_data_path,
+                   vpsc_transposed_data_path,
+                   max_generations=100,
+                   checkpoint_path="checkpoints/vpsc")
 
-    run_experiment()
+    # run hill experiment
+    # hill_data_path = "../data/processed_data/hill_w_hardening.txt"
+    # hill_transposed_data_path = "../data/processed_data/hill_w_hardening_transpose.txt"
+    # run_experiment(hill_data_path,
+    #                hill_transposed_data_path,
+    #                max_generations=100,
+    #                checkpoint_path="checkpoints/hill")

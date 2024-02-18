@@ -269,7 +269,7 @@ def plot_mapping(formatted_data_path, mapping_model,
         if np.abs(average_scale_between_mapped_and_actual) > 10 or np.abs(average_scale_between_mapped_and_actual) < 0.1:
             print(f"\t\033[91mWarning: Average scale between average and mapped points is high")
             print("\tTo fix this, scale the mapping individual by the average shown above")
-            print("\t ... automatically scaling by points by average")
+            print("\t ... automatically scaling by points by average\033[0m")
             mapped_points_pi_plane *= average_scale_between_mapped_and_actual
 
         mapped_handle = _plot_mapped_points()
@@ -315,4 +315,10 @@ if __name__ == "__main__":
     hill_data_path = "../data/processed_data/hill_w_hardening.txt"
     plot_mapping(hill_data_path, hill_mapping_model, [-40, 40],
                  plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
+                 drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-60, 60])
+    print()
+
+    # plot hill mapped yield surface
+    plot_mapping(hill_data_path, hill_mapping_model, [-40, 40],
+                 plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
                  drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-60, 60])
