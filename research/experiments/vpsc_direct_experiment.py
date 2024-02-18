@@ -175,7 +175,6 @@ def run_experiment(dataset_path,
     implicit_training_data._x = x
     implicit_fitness = ImplicitRegressionMD(implicit_training_data, required_params=4)
 
-
     # explicit fitness function to make yield stress constant per yield surface
     y = np.ones((x_0.size(0), 1, 1))
     explicit_training_data = ExplicitTrainingDataMD(x, y)
