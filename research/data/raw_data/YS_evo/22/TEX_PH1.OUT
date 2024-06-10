@@ -1,0 +1,25 @@
+TEXTURE AT STRAIN =    0.0250
+   0.988   1.025   0.988  <-- length of phase ellipsoid axes
+   47.29   90.00   -0.00  <-- Euler angles (deg) of phase ellipsoid axes
+B         1
+  -57.12   75.96   91.83   1.0000000
+TEXTURE AT STRAIN =    0.0500
+   0.975   1.051   0.975  <-- length of phase ellipsoid axes
+  111.48   90.00   -0.00  <-- Euler angles (deg) of phase ellipsoid axes
+B         1
+  -57.08   75.18   91.90   1.0000000
+TEXTURE AT STRAIN =    0.0750
+   0.963   1.078   0.963  <-- length of phase ellipsoid axes
+  109.46   90.00    0.00  <-- Euler angles (deg) of phase ellipsoid axes
+B         1
+  -57.05   74.35   91.97   1.0000000
+TEXTURE AT STRAIN =    0.1000
+   0.951   1.105   0.951  <-- length of phase ellipsoid axes
+  112.04   90.00    0.00  <-- Euler angles (deg) of phase ellipsoid axes
+B         1
+  -57.01   73.48   92.04   1.0000000
+TEXTURE AT STRAIN =    0.1250
+   0.939   1.133   0.939  <-- length of phase ellipsoid axes
+  114.43   90.00    0.00  <-- Euler angles (deg) of phase ellipsoid axes
+B         1
+  -56.97   72.57   92.12   1.0000000
