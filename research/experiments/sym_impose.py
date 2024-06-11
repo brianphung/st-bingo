@@ -41,8 +41,9 @@ class ParentAgraphIndv:
         self.P_desired = P_desired
 
     def evaluate_equation_at(self, x, detach=True):
+        
         principal_stresses, state_parameters = x
-
+        # print('pricipal stresses=',principal_stresses)
         mapping_matrices = self.mapping_indv.evaluate_equation_at_no_detach([state_parameters])
         P_mapped = torch.transpose(mapping_matrices, 1, 2) @ self.P_desired @ mapping_matrices
         yield_stresses = torch.transpose(principal_stresses, 1, 2) @ P_mapped @ principal_stresses
@@ -114,15 +115,19 @@ class ParentFitnessToChildFitness(VectorBasedFunction):
     def evaluate_fitness_vector(self, individual):
         parent_agraph = ParentAgraphIndv(individual, self.P_desired)
 
+        
         # evaluate the child individual on the state parameter to get the mapping matrices
+
         mapping_matrices = individual.evaluate_equation_at([self.fitness_fn.training_data.x[1]])
+        
 
         P_mapped = mapping_matrices.transpose((0, 2, 1)) @ self.P_desired.detach().numpy() @ mapping_matrices
 
         # normalize against the plane solution by using inverse of coefficient of variation
         normalization_fitness = 2 * np.mean(P_mapped, axis=(1, 2)) / np.std(P_mapped + P_mapped.transpose((0, 2, 1)), axis=(1, 2))
-
+        
         fitness = self.fitness_fn.evaluate_fitness_vector(parent_agraph)
+
         return np.hstack((fitness, normalization_fitness))
 
 
@@ -139,8 +144,10 @@ class DoubleFitness(VectorBasedFunction):
 
     def evaluate_fitness_vector(self, individual):
         implicit = self.implicit_fitness.evaluate_fitness_vector(individual)
+        
         explicit = self.explicit_fitness.evaluate_fitness_vector(individual)
-
+        
+        
         total_fitness = np.hstack((implicit, explicit))
 
         return total_fitness
@@ -173,6 +180,8 @@ def run_experiment(dataset_path,
     x_0 = torch.from_numpy(implicit_training_data._x[:, :3].reshape((-1, 3, 1))).double()
     x_1 = torch.from_numpy(implicit_training_data._x[:, 3].reshape((-1,1,1))).double()
     x = [x_0, x_1]
+    # print('x_0=',x_0[0])
+    # print('x_1=',x_1)
     implicit_training_data._x = x
     implicit_fitness = ImplicitRegressionMD(implicit_training_data, required_params=4)
 
@@ -193,7 +202,8 @@ def run_experiment(dataset_path,
     # combine implicit and explicit fitness functions
     yield_surface_fitness = DoubleFitness(implicit_fitness=parent_implicit, explicit_fitness=parent_explicit)
 
-    local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1])
+    # local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1])
+    local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm")
 
     # downscale CPU_COUNT to avoid resource conflicts
     N_CPUS_TO_USE = floor(CPU_COUNT * 0.9)
@@ -225,17 +235,21 @@ def run_experiment(dataset_path,
     island.evolve(1)
     island.evolve_until_convergence(max_generations=max_generations,
                                     fitness_threshold=1e-5,
-                                    convergence_check_frequency=10,
+                                    convergence_check_frequency=1,
                                     num_checkpoints=3,
                                     checkpoint_base_name=f"{checkpoint_path}/checkpoint")
-
+    f=open('output.txt','w')
     print("Finished bingo run, pareto front is:")
     print(pareto_front)
+    print(pareto_front,file=f)
+    print('best individual=',island.get_best_individual())
+
+    f.close()
 
 
 if __name__ == '__main__':
     # make checkpoint folders if they don't exist
-    # vpsc_checkpoint_path = "checkpoints/vpsc75"
+    # vpsc_checkpoint_path = "checkpoints/vpsc"
     # if not os.path.exists(vpsc_checkpoint_path):
     #     os.makedirs(vpsc_checkpoint_path)
 
@@ -243,18 +257,18 @@ if __name__ == '__main__':
     if not os.path.exists(hill_checkpoint_path):
         os.makedirs(hill_checkpoint_path)
 
-    # # run vpsc experiment
-    # vpsc_data_path = "../data/processed_data/vpsc_75_bingo_format.txt"
-    # vpsc_transposed_data_path = "../data/processed_data/vpsc_75_transpose_bingo_format.txt"
+    # run vpsc experiment
+    # vpsc_data_path = "vpsc_57_bingo_format.txt"
+    # vpsc_transposed_data_path = "vpsc_57_transpose_bingo_format.txt"
     # run_experiment(vpsc_data_path,
     #                vpsc_transposed_data_path,
-    #                max_generations=300,
+    #                max_generations=500,
     #                checkpoint_path=vpsc_checkpoint_path)
 
-    # run hill experiment
+    #run hill experiment
     hill_data_path = "../data/processed_data/hill_w_hardening.txt"
     hill_transposed_data_path = "../data/processed_data/hill_w_hardening_transpose.txt"
     run_experiment(hill_data_path,
                    hill_transposed_data_path,
-                   max_generations=100,
+                   max_generations=2,
                    checkpoint_path=hill_checkpoint_path)
