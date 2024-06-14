@@ -28,4 +28,4 @@ except ImportError as import_err:
     from .explicit_regression import ExplicitRegression, ExplicitTrainingData
     from .implicit_regression import ImplicitRegression, ImplicitTrainingData
     ISCPP = False
-    warnings.warn(f"Could not load C++ modules {import_err}")
+    #warnings.warn(f"Could not load C++ modules {import_err}")
