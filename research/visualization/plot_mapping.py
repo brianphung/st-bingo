@@ -3,6 +3,58 @@ import numpy as np
 import matplotlib.pyplot as plt
 from research.utility.rotations import align_pi_plane_with_axes_rot
 
+def vm_0_mapping_model(eps):
+    from numpy import sin, cos, array
+
+    # bingo uses sqrt(|x|) as sqrt(x)
+    def sqrt(x):
+        return np.sqrt(np.abs(x))
+
+    X_0 = eps
+    if not isinstance(eps, np.ndarray):
+        eps = np.array([eps])[:, None, None]
+
+    Y_0 = 100
+    H = 1000
+
+    # input your individual here
+    eq =  None
+    scaling_factor = 1.0
+    # set scaling factor if needed (e.g., if average scale is too large)
+    eq *= scaling_factor
+
+    if eq.shape[0] != eps.shape[0]:
+        eq = np.repeat(eq[None, :, :], eps.shape[0], axis=0)
+
+    return eq
+
+def vm_2_mapping_model(eps):
+    from numpy import sin, cos, array
+
+    # bingo uses sqrt(|x|) as sqrt(x)
+    def sqrt(x):
+        return np.sqrt(np.abs(x))
+
+    X_0 = eps
+    if not isinstance(eps, np.ndarray):
+        eps = np.array([eps])[:, None, None]
+
+    Y_0 = 666
+    H = 9999
+
+    # input your individual here
+    eq = ((array([[0.01332133]]))/((array([[0.01332133]]) + array([[0.01332133]]) + array([[0.01332133]]) + array([[0.01332133]]) + array([[0.01332133]]) + X_0)/(array([[0.01332133]]) + array([[0.01332133]])) ) ) * (array([[-1.95664328, -2.18063358, -1.86409471],
+       [-2.18063358, -1.86455281, -1.95751611],
+       [-1.86409471, -1.95751611, -2.18104853]])) * (Y_0 + H*X_0)
+
+    scaling_factor = 1.0 #3.9575944340306066e-07
+    # set scaling factor if needed (e.g., if average scale is too large)
+    eq *= scaling_factor
+
+    if eq.shape[0] != eps.shape[0]:
+        eq = np.repeat(eq[None, :, :], eps.shape[0], axis=0)
+
+    return eq
 
 def hill_mapping_model(eps):
     from numpy import sin, cos, array
@@ -19,32 +71,9 @@ def hill_mapping_model(eps):
     eq = X_0 * array([[4.84938514, -1.39136693, 3.57891267],
                       [0.92418741, 2.16747212, 3.7473522],
                       [2.52797065, 1.72322281, 2.07687239]])
-
-    scaling_factor = 1.0
-    # set scaling factor if needed (e.g., if average scale is too large)
-    eq *= scaling_factor
-
-    if eq.shape[0] != eps.shape[0]:
-        eq = np.repeat(eq[None, :, :], eps.shape[0], axis=0)
-
-    return eq
-
-
-def custom_mapping_model(eps):
-    from numpy import sin, cos, array
-
-    # bingo uses sqrt(|x|) as sqrt(x)
-    def sqrt(x):
-        return np.sqrt(np.abs(x))
-
-    X_0 = eps
-    if not isinstance(eps, np.ndarray):
-        eps = np.array([eps])[:, None, None]
-
-    # input your individual here
-    eq =  array([[.7, 0, 0],
-                      [0, .7, 0],
-                      [0, 0, .5]])
+    eq = ((array([[0.01059842]]))/((array([[0.01059842]]) + X_0)/(array([[-0.73512775]])) )  + array([[9.91323812e-06]])) * (array([[-0.50170626,  3.49919742,  0.6829417 ],
+       [ 3.49919742, -0.61157446,  1.07439862],
+       [ 0.6829417 ,  1.07439862,  2.46633076]]))
 
     scaling_factor = 1.0
     # set scaling factor if needed (e.g., if average scale is too large)
@@ -98,7 +127,8 @@ def get_yield(principal_stress, *, eps=0.0, mapping_model):
 
     P_fict = np.array([[1, -0.5, -0.5],
                        [-0.5, 1, -0.5],
-                       [-0.5, -0.5, 1]])
+                       [-0.5, -0.5, 1]])#/(100 + 1000*eps)**2
+ 
 
     P_real = mapping_matrix.transpose((0, 2, 1)) @ P_fict @ mapping_matrix
     yield_values = principal_stress.transpose((0, 2, 1)) @ P_real @ principal_stress
@@ -240,7 +270,7 @@ def plot_mapping(formatted_data_path, mapping_model,
 
     # get mapped yield points
     mappings = mapping_model(all_eps)
-    mapped_points_3d = (mappings @ yield_points_3d[:, :, None]).squeeze()
+    mapped_points_3d = (mappings @ yield_points_3d[:, :, None] ).squeeze()
     mapped_points_pi_plane = (mapped_points_3d @ align_pi_plane_with_axes_rot())[:, :2]
 
     fig = plt.figure()
@@ -248,7 +278,6 @@ def plot_mapping(formatted_data_path, mapping_model,
 
     def _plot_yield_surfaces():
         # get yield contour values as determined by mapping_model
-        print(yield_points_3d)
         yield_surface_contours = get_contour_values_per_yield_surface(
             yield_points_3d.reshape((-1, 3, 1)),
             all_eps,
@@ -297,7 +326,7 @@ def plot_mapping(formatted_data_path, mapping_model,
             print(f"\t\033[91mWarning: Average scale between average and mapped points is high")
             print("\tTo fix this, scale the mapping individual by the average shown above")
             print("\t ... automatically scaling by points by average\033[0m")
-            mapped_points_pi_plane *= average_scale_between_mapped_and_actual
+            #mapped_points_pi_plane *= average_scale_between_mapped_and_actual
 
         mapped_handle = _plot_mapped_points()
         legend_handles.append(mapped_handle)
@@ -323,35 +352,60 @@ def plot_mapping(formatted_data_path, mapping_model,
 
 
 if __name__ == "__main__":
-    vpsc_data_path = "../data/processed_data/vpsc_57_bingo_format.txt"
-    hill_data_path = "../data/processed_data/hill_w_hardening.txt"
     # plot vspc mapped points
-    plot_mapping(hill_data_path, custom_mapping_model, [-40, 40],
-                 plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=True,
-                 drawn_axes_length=550, drawn_axes_scale=100)
+    # print("plotting vpsc results:")
+    # vpsc_data_path = "../data/processed_data/vpsc_57_bingo_format.txt"
+    # plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
+    #              plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
+    #              drawn_axes_length=550, drawn_axes_scale=100)
+    # print()
 
-    print("plotting vpsc results:")
-    vpsc_data_path = "../data/processed_data/vpsc_57_bingo_format.txt"
-    plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
-                 plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
-                 drawn_axes_length=550, drawn_axes_scale=100)
-    print()
+    # # plot vpsc mapped yield surface
+    # plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
+    #              plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
+    #              drawn_axes_length=550, drawn_axes_scale=100)
+    # print()
 
-    # plot vpsc mapped yield surface
-    plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
-                 plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
-                 drawn_axes_length=550, drawn_axes_scale=100)
-    print()
+    # print("plotting hill results:")
+    # # plot hill mapped points
+    # hill_data_path = "../data/processed_data/hill_w_hardening.txt"
+    # plot_mapping(hill_data_path, hill_mapping_model, [-40, 40],
+    #              plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
+    #              drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-60, 60])
+    # print()
 
-    print("plotting hill results:")
+    # # plot hill mapped yield surface
+    # plot_mapping(hill_data_path, hill_mapping_model, [-40, 40],
+    #              plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
+    #              drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-60, 60])
+
+    """
+    print("plotting vm 0 results:")
     # plot hill mapped points
-    hill_data_path = "../data/processed_data/hill_w_hardening.txt"
-    plot_mapping(hill_data_path, hill_mapping_model, [-40, 40],
+    hill_data_path = "../data/processed_data/vm_0_bingo_format.txt"
+    plot_mapping(hill_data_path, vm_0_mapping_model, [-60, 60],
                  plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
-                 drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-60, 60])
+                 drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-1500, 1500])
     print()
 
     # plot hill mapped yield surface
-    plot_mapping(hill_data_path, hill_mapping_model, [-40, 40],
+    plot_mapping(hill_data_path, vm_0_mapping_model, [-60, 60],
                  plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
-                 drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-60, 60])
+                 drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-1500, 1500])
+    """
+
+    print("plotting vm 2 results:")
+    # plot hill mapped points
+    hill_data_path = "../data/processed_data/vm_2_bingo_format.txt"
+    plot_mapping(hill_data_path, vm_2_mapping_model, [-60, 60],
+                 plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
+                 drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-1500, 1500])
+    print()
+
+    # plot hill mapped yield surface
+    plot_mapping(hill_data_path, vm_2_mapping_model, [-60, 60],
+                 plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
+                 drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-1500, 1500])
+
+
+    
