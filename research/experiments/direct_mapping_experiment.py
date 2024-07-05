@@ -236,10 +236,10 @@ def run_experiment(dataset_path,
 if __name__ == '__main__':
 
     tests_to_run = [
-        "david_Hill",
+        #"david_Hill",
         "vonMises_identity",
-        "vonMises_different_hardening",
-        "nohardVM",
+        # "vonMises_different_hardening",
+        # "nohardVM",
         #"VPSC75"
     ]
 
@@ -266,7 +266,7 @@ if __name__ == '__main__':
         vm_transposed_data_path = "../data/processed_data/vm_1_transpose_bingo_format.txt"
         run_experiment(vm_data_path,
                     vm_transposed_data_path,
-                    max_generations=300,
+                    max_generations=100,
                     checkpoint_path=vm_checkpoint_path)
 
     if "vonMises_different_hardening" in tests_to_run:

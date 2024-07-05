@@ -39,13 +39,17 @@ def vm_2_mapping_model(eps):
     if not isinstance(eps, np.ndarray):
         eps = np.array([eps])[:, None, None]
 
-    Y_0 = 666
-    H = 9999
+    Y_0 = 100
+    H = 10000
 
     # input your individual here
-    eq = ((array([[0.01332133]]))/((array([[0.01332133]]) + array([[0.01332133]]) + array([[0.01332133]]) + array([[0.01332133]]) + array([[0.01332133]]) + X_0)/(array([[0.01332133]]) + array([[0.01332133]])) ) ) * (array([[-1.95664328, -2.18063358, -1.86409471],
-       [-2.18063358, -1.86455281, -1.95751611],
-       [-1.86409471, -1.95751611, -2.18104853]])) * (Y_0 + H*X_0)
+    eq = (array([[ 3.52877971,  1.10704925, -0.02430281],
+       [ 3.46460522,  0.89972071,  0.24702131],
+       [ 3.79978246,  0.79637109,  0.01136958]])) * (X_0 + array([[-0.60393034]])) + array([[8.14450076, 0.31991508, 0.49715185],
+       [8.16145256, 0.41343001, 0.38658527],
+       [8.02441964, 0.44742201, 0.49108034]]) + array([[ 3.52877971,  1.10704925, -0.02430281],
+       [ 3.46460522,  0.89972071,  0.24702131],
+       [ 3.79978246,  0.79637109,  0.01136958]])*(Y_0 + H*X_0)
 
     scaling_factor = 1.0 #3.9575944340306066e-07
     # set scaling factor if needed (e.g., if average scale is too large)
@@ -396,16 +400,16 @@ if __name__ == "__main__":
 
     print("plotting vm 2 results:")
     # plot hill mapped points
-    hill_data_path = "../data/processed_data/vm_2_bingo_format.txt"
+    hill_data_path = "../data/processed_data/vm_1_bingo_format.txt"
     plot_mapping(hill_data_path, vm_2_mapping_model, [-60, 60],
                  plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
-                 drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-1500, 1500])
+                 drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-150, 150])
     print()
 
     # plot hill mapped yield surface
     plot_mapping(hill_data_path, vm_2_mapping_model, [-60, 60],
                  plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
-                 drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-1500, 1500])
+                 drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-150, 150])
 
 
     
