@@ -26,6 +26,12 @@ from bingo.symbolic_regression.implicit_regression_md import ImplicitRegressionM
 POP_SIZE = 100
 STACK_SIZE = 10
 
+def P_vm(eqps, Y_0=100, H=10000): 
+
+    tTen = torch.from_numpy(np.array([[1, -0.5, -0.5],
+                [-0.5, 1, -0.5],
+                [-0.5, -0.5, 1]]))/(Y_0 + H*eqps)**2
+    return tTen.detach().numpy()
 
 class ParentAgraphIndv:
     """
@@ -38,13 +44,15 @@ class ParentAgraphIndv:
     """
     def __init__(self, mapping_indv, P_desired):
         self.mapping_indv = mapping_indv
-        self.P_desired = P_desired
+        self.P_desired_func = P_desired
 
     def evaluate_equation_at(self, x, detach=True):
         principal_stresses, state_parameters = x
-
+        P_desired = self.P_desired_func(state_parameters)
+        P_desired = torch.from_numpy(P_desired).double()
+        
         mapping_matrices = self.mapping_indv.evaluate_equation_at_no_detach([state_parameters])
-        P_mapped = torch.transpose(mapping_matrices, 1, 2) @ self.P_desired @ mapping_matrices
+        P_mapped = torch.transpose(mapping_matrices, 1, 2) @ P_desired @ mapping_matrices
         yield_stresses = torch.transpose(principal_stresses, 1, 2) @ P_mapped @ principal_stresses
 
         if detach:
@@ -78,26 +86,26 @@ class ParentAgraphIndv:
         return yield_stresses.detach().numpy(), full_derivative
 
 
-class DirectMappingFitness(VectorBasedFunction):
-    """
-    Evaluates a given mapping individual by converting it to a parent agraph
-    as described above and then evaluating said agraph on the provided
-    explicit and implicit fitness functions.
-    """
-    def __init__(self, *, explicit_fitness, implicit_fitness, P_desired):
-        super().__init__(metric="rmse")
-        self.implicit_fitness = implicit_fitness
-        self.explicit_fitness = explicit_fitness
-        self.P_desired = P_desired
+# class DirectMappingFitness(VectorBasedFunction):
+#     """
+#     Evaluates a given mapping individual by converting it to a parent agraph
+#     as described above and then evaluating said agraph on the provided
+#     explicit and implicit fitness functions.
+#     """
+#     def __init__(self, *, explicit_fitness, implicit_fitness, P_desired):
+#         super().__init__(metric="rmse")
+#         self.implicit_fitness = implicit_fitness
+#         self.explicit_fitness = explicit_fitness
+#         self.P_desired = P_desired
 
-    def evaluate_fitness_vector(self, individual):
-        parent_indv = ParentAgraphIndv(individual, self.P_desired)
+#     def evaluate_fitness_vector(self, individual):
+#         parent_indv = ParentAgraphIndv(individual, self.P_desired)
 
-        implicit = self.implicit_fitness.evaluate_fitness_vector(parent_indv)
-        explicit = self.explicit_fitness.evaluate_fitness_vector(parent_indv)
+#         implicit = self.implicit_fitness.evaluate_fitness_vector(parent_indv)
+#         explicit = self.explicit_fitness.evaluate_fitness_vector(parent_indv)
 
-        total_fitness = np.hstack((implicit, explicit))
-        return total_fitness
+#         total_fitness = np.hstack((implicit, explicit))
+#         return total_fitness
 
 
 class ParentFitnessToChildFitness(VectorBasedFunction):
@@ -109,15 +117,16 @@ class ParentFitnessToChildFitness(VectorBasedFunction):
     def __init__(self, *, fitness_for_parent, P_desired):
         super().__init__(metric="mse")
         self.fitness_fn = fitness_for_parent
-        self.P_desired = P_desired
+        self.P_desired_function = P_desired
 
     def evaluate_fitness_vector(self, individual):
-        parent_agraph = ParentAgraphIndv(individual, self.P_desired)
+        parent_agraph = ParentAgraphIndv(individual, self.P_desired_function)
 
         # evaluate the child individual on the state parameter to get the mapping matrices
+        #raise Exception('Get out.')
         mapping_matrices = individual.evaluate_equation_at([self.fitness_fn.training_data.x[1]])
-
-        P_mapped = mapping_matrices.transpose((0, 2, 1)) @ self.P_desired.detach().numpy() @ mapping_matrices
+        P_desired = self.P_desired_function(self.fitness_fn.training_data.x[1])
+        P_mapped = mapping_matrices.transpose((0, 2, 1)) @ P_desired @ mapping_matrices
 
         # normalize against the plane solution by using inverse of coefficient of variation
         normalization_fitness = 2 * np.mean(P_mapped, axis=(1, 2)) / np.std(P_mapped + P_mapped.transpose((0, 2, 1)), axis=(1, 2))
@@ -181,10 +190,8 @@ def run_experiment(dataset_path,
     explicit_training_data = ExplicitTrainingDataMD(x, y)
     explicit_fitness = ExplicitRegressionMD(explicit_training_data)
 
-    P_vm = np.array([[1, -0.5, -0.5],
-                     [-0.5, 1, -0.5],
-                     [-0.5, -0.5, 1]])
-    P_vm = torch.from_numpy(P_vm).double()
+
+    #P_vm = torch.from_numpy(P_vm).double()
 
     # convert fitness functions to child fitness functions
     parent_explicit = ParentFitnessToChildFitness(fitness_for_parent=explicit_fitness, P_desired=P_vm)
@@ -198,6 +205,7 @@ def run_experiment(dataset_path,
     # downscale CPU_COUNT to avoid resource conflicts
     N_CPUS_TO_USE = floor(CPU_COUNT * 0.9)
     print(f"using {N_CPUS_TO_USE}/{CPU_COUNT} cpus")
+    # evaluator = Evaluation(local_opt_fitness, multiprocess=False)
     evaluator = Evaluation(local_opt_fitness, multiprocess=N_CPUS_TO_USE)
 
     # setup archipelago
