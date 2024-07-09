@@ -199,13 +199,17 @@ class ContinuousLocalOptimizationMD(FitnessFunction):
             The fitness of the invdividual
         """
         if individual.needs_local_optimization():
+            self._optimize_params(individual)
+            # disable BFGS fallback for YS mapping
+            """
             try:
                 self._optimize_params(individual)
-            except TypeError:
+            except TypeError as e:
                 old_alg = self._algorithm
                 self._algorithm = "BFGS"
                 self._optimize_params(individual)
                 self._algorithm = old_alg
+            """
         return self._evaluate_fitness(individual)
 
     @staticmethod
@@ -263,6 +267,7 @@ class ContinuousLocalOptimizationMD(FitnessFunction):
                     method=self._algorithm,
                     **self._optimization_options)
             else:
+                #print(self._algorithm)
                 optimize_result = optimize.minimize(sub_routine, params,
                                                     args=(individual,),
                                                     method=self._algorithm,
