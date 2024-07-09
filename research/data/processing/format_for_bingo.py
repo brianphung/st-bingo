@@ -98,7 +98,7 @@ def get_bingo_formatted_data_transposed(n, folder_path):
 
 
 if __name__ == '__main__':
-    runs = [57]
+    runs = [75]
     raw_data_path = f"../raw_data/YS_evo"
 
     for n in runs:

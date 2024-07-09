@@ -234,27 +234,74 @@ def run_experiment(dataset_path,
 
 
 if __name__ == '__main__':
-    # make checkpoint folders if they don't exist
-    vpsc_checkpoint_path = "checkpoints/vpsc"
-    if not os.path.exists(vpsc_checkpoint_path):
-        os.makedirs(vpsc_checkpoint_path)
+    tests_to_run = [
+        #"david_Hill",
+        "vonMises_identity",
+        # "vonMises_different_hardening",
+        #"nohardVM",
+        #"VPSC75"
+    ]
 
-    hill_checkpoint_path = "checkpoints/hill"
-    if not os.path.exists(hill_checkpoint_path):
-        os.makedirs(hill_checkpoint_path)
+    if "nohardVM" in tests_to_run:
+        vm_checkpoint_path = "checkpoints/vm_0"
+        if not os.path.exists(vm_checkpoint_path):
+            os.makedirs(vm_checkpoint_path)
 
-    # run vpsc experiment
-    vpsc_data_path = "../data/processed_data/vpsc_57_bingo_format.txt"
-    vpsc_transposed_data_path = "../data/processed_data/vpsc_57_transpose_bingo_format.txt"
-    run_experiment(vpsc_data_path,
-                   vpsc_transposed_data_path,
-                   max_generations=100,
-                   checkpoint_path=vpsc_checkpoint_path)
+        # run vpsc experiment
+        vm_data_path = "../data/processed_data/vm_0_bingo_format.txt"
+        vm_transposed_data_path = "../data/processed_data/vm_0_transpose_bingo_format.txt"
+        run_experiment(vm_data_path,
+                    vm_transposed_data_path,
+                    max_generations=100,
+                    checkpoint_path=vm_checkpoint_path)
+        
+    if "vonMises_identity" in tests_to_run:
+        vm_checkpoint_path = "checkpoints/vm_1"
+        if not os.path.exists(vm_checkpoint_path):
+            os.makedirs(vm_checkpoint_path)
 
-    # run hill experiment
-    # hill_data_path = "../data/processed_data/hill_w_hardening.txt"
-    # hill_transposed_data_path = "../data/processed_data/hill_w_hardening_transpose.txt"
-    # run_experiment(hill_data_path,
-    #                hill_transposed_data_path,
-    #                max_generations=100,
-    #                checkpoint_path=hill_checkpoint_path)
+        # run vpsc experiment
+        vm_data_path = "../data/processed_data/vm_1_bingo_format.txt"
+        vm_transposed_data_path = "../data/processed_data/vm_1_transpose_bingo_format.txt"
+        run_experiment(vm_data_path,
+                    vm_transposed_data_path,
+                    max_generations=100,
+                    checkpoint_path=vm_checkpoint_path)
+
+    if "vonMises_different_hardening" in tests_to_run:
+        vm_checkpoint_path = "checkpoints/vm_2"
+        if not os.path.exists(vm_checkpoint_path):
+            os.makedirs(vm_checkpoint_path)
+
+        # run vpsc experiment
+        vm_data_path = "../data/processed_data/vm_2_bingo_format.txt"
+        vm_transposed_data_path = "../data/processed_data/vm_2_transpose_bingo_format.txt"
+        run_experiment(vm_data_path,
+                    vm_transposed_data_path,
+                    max_generations=100,
+                    checkpoint_path=vm_checkpoint_path)
+
+    if "VPSC75" in tests_to_run:
+        vpsc_checkpoint_path = "checkpoints/vpsc75"
+        if not os.path.exists(vpsc_checkpoint_path):
+            os.makedirs(vpsc_checkpoint_path)
+
+        # run vpsc experiment
+        vpsc_data_path = "../data/processed_data/vpsc_75_bingo_format.txt"
+        vpsc_transposed_data_path = "../data/processed_data/vpsc_75_transpose_bingo_format.txt"
+        run_experiment(vpsc_data_path,
+                    vpsc_transposed_data_path,
+                    max_generations=300,
+                    checkpoint_path=vpsc_checkpoint_path)
+
+    if "david_Hill" in tests_to_run:
+        hill_checkpoint_path = "checkpoints/hill_w_evolving_Pvm"
+        if not os.path.exists(hill_checkpoint_path):
+            os.makedirs(hill_checkpoint_path)
+        # run hill experiment
+        hill_data_path = "../data/processed_data/hill_w_hardening.txt"
+        hill_transposed_data_path = "../data/processed_data/hill_w_hardening_transpose.txt"
+        run_experiment(hill_data_path,
+                    hill_transposed_data_path,
+                    max_generations=150,
+                    checkpoint_path=hill_checkpoint_path)

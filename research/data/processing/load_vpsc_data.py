@@ -98,7 +98,7 @@ def get_yield_surfaces_df(n, folder_path, plot=False):
 
 
 if __name__ == "__main__":
-    runs = [57]
+    runs = [75]
     raw_data_path = f"../raw_data/YS_evo"
 
     for run in runs:
