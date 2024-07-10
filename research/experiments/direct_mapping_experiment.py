@@ -78,26 +78,26 @@ class ParentAgraphIndv:
         return yield_stresses.detach().numpy(), full_derivative
 
 
-class DirectMappingFitness(VectorBasedFunction):
-    """
-    Evaluates a given mapping individual by converting it to a parent agraph
-    as described above and then evaluating said agraph on the provided
-    explicit and implicit fitness functions.
-    """
-    def __init__(self, *, explicit_fitness, implicit_fitness, P_desired):
-        super().__init__(metric="rmse")
-        self.implicit_fitness = implicit_fitness
-        self.explicit_fitness = explicit_fitness
-        self.P_desired = P_desired
+# class DirectMappingFitness(VectorBasedFunction):
+#     """
+#     Evaluates a given mapping individual by converting it to a parent agraph
+#     as described above and then evaluating said agraph on the provided
+#     explicit and implicit fitness functions.
+#     """
+#     def __init__(self, *, explicit_fitness, implicit_fitness, P_desired):
+#         super().__init__(metric="rmse")
+#         self.implicit_fitness = implicit_fitness
+#         self.explicit_fitness = explicit_fitness
+#         self.P_desired = P_desired
 
-    def evaluate_fitness_vector(self, individual):
-        parent_indv = ParentAgraphIndv(individual, self.P_desired)
+#     def evaluate_fitness_vector(self, individual):
+#         parent_indv = ParentAgraphIndv(individual, self.P_desired)
 
-        implicit = self.implicit_fitness.evaluate_fitness_vector(parent_indv)
-        explicit = self.explicit_fitness.evaluate_fitness_vector(parent_indv)
+#         implicit = self.implicit_fitness.evaluate_fitness_vector(parent_indv)
+#         explicit = self.explicit_fitness.evaluate_fitness_vector(parent_indv)
 
-        total_fitness = np.hstack((implicit, explicit))
-        return total_fitness
+#         total_fitness = np.hstack((implicit, explicit))
+#         return total_fitness
 
 
 class ParentFitnessToChildFitness(VectorBasedFunction):
