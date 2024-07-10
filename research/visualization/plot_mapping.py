@@ -15,8 +15,12 @@ def vm_1_mapping_model(eps):
         eps = np.array([eps])[:, None, None]
 
     # input your individual here
-    x = array([ 8.164965840114106e-01, -2.039600180638302e-08])
-    eq = (x[1]*X_0 + x[0])*np.eye(3)
+    x = array([ 0.0314091528502507 ,  0.01010101010101011, -0.3926047752324647 ,
+            -0.7336831417939027 , -0.2434946890006791 , -0.6050921964480506 ,
+            -1.0431560121827226 , -0.14650923982744513]) 
+    eq = ((x[0])/(X_0 + x[1]) ) * (array([[x[2], x[3], x[4] ],  
+            [x[3] , x[6], x[5]],
+            [x[4], x[5], x[7]]]))
 
     scaling_factor = 1.0
     # set scaling factor if needed (e.g., if average scale is too large)
