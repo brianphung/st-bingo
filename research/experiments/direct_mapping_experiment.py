@@ -177,7 +177,12 @@ def run_experiment(dataset_path,
     implicit_fitness = ImplicitRegressionMD(implicit_training_data, required_params=4)
 
     # explicit fitness function to make yield stress constant per yield surface
-    y = np.ones((x_0.size(0), 1, 1))
+    #y = np.ones((x_0.size(0), 1, 1))
+    
+    Y_0 = 10
+    H = 990
+    y = np.transpose(np.array([[[ (eqps_*H + Y_0)**2 for eqps_ in x_1 ]]]), (2,1,0))
+    #print(y1.shape, y.shape)
     explicit_training_data = ExplicitTrainingDataMD(x, y)
     explicit_fitness = ExplicitRegressionMD(explicit_training_data)
 
@@ -193,8 +198,8 @@ def run_experiment(dataset_path,
     # combine implicit and explicit fitness functions
     yield_surface_fitness = DoubleFitness(implicit_fitness=parent_implicit, explicit_fitness=parent_explicit)
 
-    local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1], options={"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12, "maxiter": 10000})
-
+    #local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1], options={"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12, "maxiter": 10000})
+    local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1])
     # downscale CPU_COUNT to avoid resource conflicts
     N_CPUS_TO_USE = floor(CPU_COUNT * 0.9)
     print(f"using {N_CPUS_TO_USE}/{CPU_COUNT} cpus")
@@ -235,8 +240,8 @@ def run_experiment(dataset_path,
 
 if __name__ == '__main__':
     tests_to_run = [
-        #"david_Hill",
-        "vonMises_identity",
+        "david_Hill",
+        #"vonMises_identity",
         # "vonMises_different_hardening",
         #"nohardVM",
         #"VPSC75"
