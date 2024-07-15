@@ -198,8 +198,8 @@ def run_experiment(dataset_path,
     # combine implicit and explicit fitness functions
     yield_surface_fitness = DoubleFitness(implicit_fitness=parent_implicit, explicit_fitness=parent_explicit)
 
-    #local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1], options={"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12, "maxiter": 10000})
-    local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1])
+    local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1], options={"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12})
+    #local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1])
     # downscale CPU_COUNT to avoid resource conflicts
     N_CPUS_TO_USE = floor(CPU_COUNT * 0.9)
     print(f"using {N_CPUS_TO_USE}/{CPU_COUNT} cpus")
@@ -240,11 +240,11 @@ def run_experiment(dataset_path,
 
 if __name__ == '__main__':
     tests_to_run = [
-        "david_Hill",
+        #"david_Hill",
         #"vonMises_identity",
         # "vonMises_different_hardening",
         #"nohardVM",
-        #"VPSC75"
+        "VPSC75"
     ]
 
     if "nohardVM" in tests_to_run:
@@ -296,7 +296,7 @@ if __name__ == '__main__':
         vpsc_transposed_data_path = "../data/processed_data/vpsc_75_transpose_bingo_format.txt"
         run_experiment(vpsc_data_path,
                     vpsc_transposed_data_path,
-                    max_generations=300,
+                    max_generations=500,
                     checkpoint_path=vpsc_checkpoint_path)
 
     if "david_Hill" in tests_to_run:

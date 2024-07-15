@@ -240,11 +240,11 @@ def run_experiment(dataset_path,
 
 if __name__ == '__main__':
     tests_to_run = [
-        "david_Hill",
+        #"david_Hill",
         #"vonMises_identity",
         # "vonMises_different_hardening",
         #"nohardVM",
-        #"VPSC75"
+        "VPSC75"
     ]
 
     if "nohardVM" in tests_to_run:
@@ -296,7 +296,7 @@ if __name__ == '__main__':
         vpsc_transposed_data_path = "../data/processed_data/vpsc_75_transpose_bingo_format.txt"
         run_experiment(vpsc_data_path,
                     vpsc_transposed_data_path,
-                    max_generations=300,
+                    max_generations=500,
                     checkpoint_path=vpsc_checkpoint_path)
 
     if "david_Hill" in tests_to_run:
@@ -308,5 +308,5 @@ if __name__ == '__main__':
         hill_transposed_data_path = "../data/processed_data/hill_w_hardening_transpose.txt"
         run_experiment(hill_data_path,
                     hill_transposed_data_path,
-                    max_generations=150,
+                    max_generations=500,
                     checkpoint_path=hill_checkpoint_path)
