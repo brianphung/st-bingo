@@ -1,7 +1,9 @@
 from functools import partial
 import numpy as np
 import matplotlib.pyplot as plt
-from research.utility.rotations import align_pi_plane_with_axes_rot
+from research.utility.rotations import align_axes_with_pi_plane_rot, align_pi_plane_with_axes_rot
+import dill
+import sys
 
 def vm_1_mapping_model(eps):
     from numpy import sin, cos, array
@@ -80,7 +82,6 @@ def hill_mapping_model(eps):
 
     return eq
 
-
 def vpsc_57_mapping_model(eps):
     from numpy import sin, cos, array
 
@@ -97,6 +98,36 @@ def vpsc_57_mapping_model(eps):
          array([[-0.22488406, 0.39036446, 0.23017129],
                 [-0.09263297, 0.41016726, 0.07469385],
                 [-0.25825709, 0.51208763, 0.13926473]])
+
+    scaling_factor = 1.0
+    # set scaling factor if needed (e.g., if average scale is too large)
+    eq *= scaling_factor
+
+    if eq.shape[0] != eps.shape[0]:
+        eq = np.repeat(eq[None, :, :], eps.shape[0], axis=0)
+
+    return eq
+
+
+
+def vpsc_75_mapping_model(eps):
+    from numpy import sin, cos, array
+
+    if 'darwin' in sys.platform:
+        individual_path = "/Users/brian/Work/software/st-bingo/research/experiments/checkpoints/vpsc75/checkpoint_501.pkl"
+    else:
+        individual_path = None
+    with open(individual_path, 'rb') as f:
+        model = dill.load(f)
+
+    eps = np.array([eps[0,0,:]])
+    eq = model.hall_of_fame[0].evaluate_equation_at(eps)[0]
+    eq *= (100 + 1050*eps)
+    eq = align_axes_with_pi_plane_rot().T @ eq @ align_axes_with_pi_plane_rot()
+    eq[:, 2] = 0
+    eq[2, :] = 0
+    eq[2, 2] = 1
+    eq = align_axes_with_pi_plane_rot() @ eq @ align_axes_with_pi_plane_rot().T
 
     scaling_factor = 1.0
     # set scaling factor if needed (e.g., if average scale is too large)
@@ -349,14 +380,33 @@ def plot_mapping(formatted_data_path, mapping_model,
 if __name__ == "__main__":
     # plot vspc mapped points
     # print("plotting vpsc results:")
-    # vpsc_data_path = "../data/processed_data/vpsc_57_bingo_format.txt"
-    # plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
+    # vpsc_data_path = "../data/processed_data/vpsc_75_bingo_format.txt"
+    # plot_mapping(vpsc_data_path, vpsc_75_mapping_model, [-600, 600],
     #              plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
     #              drawn_axes_length=550, drawn_axes_scale=100)
     # print()
 
-    # # plot vpsc mapped yield surface
-    # plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
+    # plot vpsc mapped yield surface
+    # plot_mapping(vpsc_data_path, vpsc_75_mapping_model, [-600, 600],
+    #              plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
+    #              drawn_axes_length=550, drawn_axes_scale=100)
+    # print()
+
+    print("plotting vpsc results:")
+    vpsc_data_path = "../data/processed_data/vpsc_57_bingo_format.txt"
+    plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
+                 plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
+                 drawn_axes_length=550, drawn_axes_scale=100)
+    print()
+    
+    # plot vpsc mapped yield surface
+    plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
+                 plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
+                 drawn_axes_length=550, drawn_axes_scale=100)
+    print()
+
+    # plot vpsc mapped yield surface
+    # plot_mapping(vpsc_data_path, vpsc_75_mapping_model, [-600, 600],
     #              plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
     #              drawn_axes_length=550, drawn_axes_scale=100)
     # print()
@@ -374,6 +424,7 @@ if __name__ == "__main__":
     #              plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
     #              drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-60, 60])
 
+    """
     print("plotting vm results:")
     # plot hill mapped points
     hill_data_path = "../data/processed_data/vm_1_bingo_format.txt"
@@ -386,3 +437,4 @@ if __name__ == "__main__":
     plot_mapping(hill_data_path, vm_1_mapping_model, [-40, 40],
                  plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
                  drawn_axes_length=200, drawn_axes_scale=10, figure_range=[-300, 300])
+    """
