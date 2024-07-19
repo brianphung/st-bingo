@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from research.utility.rotations import align_axes_with_pi_plane_rot, align_pi_plane_with_axes_rot
 import dill
 import sys
+from numpy import array
 
 def vm_1_mapping_model(eps):
     from numpy import sin, cos, array
@@ -58,22 +59,39 @@ def vm_1_mapping_model(eps):
     return eq
 
 def hill_mapping_model(eps):
-    from numpy import sin, cos, array
-
-    # bingo uses sqrt(|x|) as sqrt(x)
-    def sqrt(x):
-        return np.sqrt(np.abs(x))
-
-    X_0 = eps
+    if 'darwin' in sys.platform:
+        individual_path = "/Users/brian/Work/software/st-bingo/research/experiments/checkpoints/hill_constant/checkpoint_151.pkl"
+    else:
+        individual_path = None
+    with open(individual_path, 'rb') as f:
+        model = dill.load(f)
+    print(model.hall_of_fame[1])
     if not isinstance(eps, np.ndarray):
         eps = np.array([eps])[:, None, None]
+    X_0 = eps
 
-    # input your individual here
-    eq = X_0 * array([[4.84938514, -1.39136693, 3.57891267],
-                      [0.92418741, 2.16747212, 3.7473522],
-                      [2.52797065, 1.72322281, 2.07687239]])
+    x = np.array([ 0.19395790241796493 ,  0.19466451043426053 ,
+       -0.785455772704798   , -0.18131732698525171 ,
+        0.04831612560296698 , -0.9443873169242883  ,
+       -0.02171985979340752 ,  0.015920102302059713,
+       -0.8102174075929641  , -0.10561489700080459 ,
+       -0.027066650100274783])
 
-    scaling_factor = 1.0
+    eps = np.array([eps[0,0,:]])
+    eq = ((array(x[0]))/(X_0 + array(x[1])) ) * (array([[x[2], x[3],  x[4]],
+        [x[5], x[6],  x[7] ],
+        [x[8], x[9], x[10] ]]))
+    eq = ((array(0.19468542))/(X_0 + array(0.19468542)) ) * (array([[-0.78883927, -0.17774928,  0.05046644],
+       [-0.94038756, -0.01281956,  0.0229076 ],
+       [-0.80953323, -0.10425625, -0.02368224]]))
+    # eq /= (100 + 1050*eps)
+    eq = align_axes_with_pi_plane_rot().T @ eq @ align_axes_with_pi_plane_rot()
+    eq[:, 2] = 0
+    eq[2, :] = 0
+    eq[2, 2] = 1
+    eq = align_axes_with_pi_plane_rot() @ eq @ align_axes_with_pi_plane_rot().T
+
+    scaling_factor = 10
     # set scaling factor if needed (e.g., if average scale is too large)
     eq *= scaling_factor
 
@@ -120,6 +138,8 @@ def vpsc_75_mapping_model(eps):
     with open(individual_path, 'rb') as f:
         model = dill.load(f)
 
+
+
     eps = np.array([eps[0,0,:]])
     eq = model.hall_of_fame[0].evaluate_equation_at(eps)[0]
     eq *= (100 + 1050*eps)
@@ -129,12 +149,14 @@ def vpsc_75_mapping_model(eps):
     eq[2, 2] = 1
     eq = align_axes_with_pi_plane_rot() @ eq @ align_axes_with_pi_plane_rot().T
 
-    scaling_factor = 1.0
+    scaling_factor = .5
     # set scaling factor if needed (e.g., if average scale is too large)
     eq *= scaling_factor
 
     if eq.shape[0] != eps.shape[0]:
         eq = np.repeat(eq[None, :, :], eps.shape[0], axis=0)
+
+    eq = np.eye(3)*scaling_factor
 
     return eq
 
@@ -371,39 +393,39 @@ def plot_mapping(formatted_data_path, mapping_model,
     ax.set_ylim(*figure_range)
 
     ax.legend(handles=legend_handles, labels=legend_labels)
-    ax.set_xlabel("$S_1$ (MPa)")
-    ax.set_ylabel("$S_2$ (MPa)")
+    ax.set_xlabel("$S^{dev}_1$ [MPa]")
+    ax.set_ylabel("$S^{dev}_2$ [MPa]")
 
     plt.show()
 
 
 if __name__ == "__main__":
     # plot vspc mapped points
-    # print("plotting vpsc results:")
-    # vpsc_data_path = "../data/processed_data/vpsc_75_bingo_format.txt"
-    # plot_mapping(vpsc_data_path, vpsc_75_mapping_model, [-600, 600],
-    #              plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
-    #              drawn_axes_length=550, drawn_axes_scale=100)
-    # print()
-
-    # plot vpsc mapped yield surface
-    # plot_mapping(vpsc_data_path, vpsc_75_mapping_model, [-600, 600],
-    #              plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
-    #              drawn_axes_length=550, drawn_axes_scale=100)
-    # print()
-
     print("plotting vpsc results:")
-    vpsc_data_path = "../data/processed_data/vpsc_57_bingo_format.txt"
-    plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
+    vpsc_data_path = "../data/processed_data/in625_0_bingo_format.txt"
+    plot_mapping(vpsc_data_path, vpsc_75_mapping_model, [-600, 600],
                  plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
                  drawn_axes_length=550, drawn_axes_scale=100)
     print()
-    
+
     # plot vpsc mapped yield surface
-    plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
+    plot_mapping(vpsc_data_path, vpsc_75_mapping_model, [-600, 600],
                  plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
                  drawn_axes_length=550, drawn_axes_scale=100)
     print()
+
+    # print("plotting vpsc results:")
+    # vpsc_data_path = "../data/processed_data/vpsc_57_bingo_format.txt"
+    # plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
+    #              plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
+    #              drawn_axes_length=550, drawn_axes_scale=100)
+    # print()
+    
+    # # plot vpsc mapped yield surface
+    # plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
+    #              plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
+    #              drawn_axes_length=550, drawn_axes_scale=100)
+    # print()
 
     # plot vpsc mapped yield surface
     # plot_mapping(vpsc_data_path, vpsc_75_mapping_model, [-600, 600],
@@ -419,10 +441,10 @@ if __name__ == "__main__":
     #              drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-60, 60])
     # print()
 
-    # # plot hill mapped yield surface
-    # plot_mapping(hill_data_path, hill_mapping_model, [-40, 40],
-    #              plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
-    #              drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-60, 60])
+    # # # plot hill mapped yield surface
+    # # plot_mapping(hill_data_path, hill_mapping_model, [-40, 40],
+    # #              plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
+    # #              drawn_axes_length=42, drawn_axes_scale=10, figure_range=[-60, 60])
 
     """
     print("plotting vm results:")

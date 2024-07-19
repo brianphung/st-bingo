@@ -98,12 +98,16 @@ def get_bingo_formatted_data_transposed(n, folder_path):
 
 
 if __name__ == '__main__':
-    runs = [75]
-    raw_data_path = f"../raw_data/YS_evo"
+    # runs = [75]
+    # raw_data_path = f"../raw_data/YS_evo"
+    runs = [0]
+    raw_data_path = '../raw_data/IN625'
 
     for n in runs:
         normal_data = get_bingo_formatted_data(n, raw_data_path)
         transposed_data = get_bingo_formatted_data_transposed(n, raw_data_path)
 
-        np.savetxt(f"../processed_data/vpsc_{n}_bingo_format.txt", normal_data)
-        np.savetxt(f"../processed_data/vpsc_{n}_transpose_bingo_format.txt", transposed_data)
+        # np.savetxt(f"../processed_data/vpsc_{n}_bingo_format.txt", normal_data)
+        # np.savetxt(f"../processed_data/vpsc_{n}_transpose_bingo_format.txt", transposed_data)
+        np.savetxt(f"../processed_data/in625_{n}_bingo_format.txt", normal_data)
+        np.savetxt(f"../processed_data/in625_{n}_transpose_bingo_format.txt", transposed_data)
