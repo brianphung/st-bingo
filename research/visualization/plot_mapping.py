@@ -131,32 +131,52 @@ def vpsc_57_mapping_model(eps):
 def vpsc_75_mapping_model(eps):
     from numpy import sin, cos, array
 
-    if 'darwin' in sys.platform:
-        individual_path = "/Users/brian/Work/software/st-bingo/research/experiments/checkpoints/vpsc75/checkpoint_501.pkl"
-    else:
-        individual_path = None
-    with open(individual_path, 'rb') as f:
-        model = dill.load(f)
+    # if 'darwin' in sys.platform:
+    #     individual_path = "/Users/brian/Work/software/st-bingo/research/experiments/checkpoints/vpsc75/checkpoint_501.pkl"
+    # else:
+    #     individual_path = None
+    # with open(individual_path, 'rb') as f:
+    #     model = dill.load(f)
 
 
 
-    eps = np.array([eps[0,0,:]])
-    eq = model.hall_of_fame[0].evaluate_equation_at(eps)[0]
-    eq *= (100 + 1050*eps)
-    eq = align_axes_with_pi_plane_rot().T @ eq @ align_axes_with_pi_plane_rot()
-    eq[:, 2] = 0
-    eq[2, :] = 0
-    eq[2, 2] = 1
-    eq = align_axes_with_pi_plane_rot() @ eq @ align_axes_with_pi_plane_rot().T
+    # eps = np.array([eps[0,0,:]])
+    # eq = model.hall_of_fame[0].evaluate_equation_at(eps)[0]
+    # print(model.hall_of_fame[0])
+    if not isinstance(eps, np.ndarray):
+        eps = np.array([eps])[:, None, None]
+    X_0 = eps
+    eq = ((X_0) * (array([[ 0.4609263 ,  1.10732082, -1.64235896],
+       [-5.78728213, -1.14002744, -7.41592524],
+       [ 3.98790411,  2.2067136 ,  5.84326082]])) + array([[-0.03862302, -0.03187797,  0.20941924],
+       [ 0.88568078,  0.49687034,  1.68504125],
+       [-0.27601273, -0.15597089, -0.63898822]])) @ ((((X_0) * (array([[ 0.4609263 ,  1.10732082, -1.64235896],
+       [-5.78728213, -1.14002744, -7.41592524],
+       [ 3.98790411,  2.2067136 ,  5.84326082]])) + array([[-0.03862302, -0.03187797,  0.20941924],
+       [ 0.88568078,  0.49687034,  1.68504125],
+       [-0.27601273, -0.15597089, -0.63898822]])) @ (array([[ 0.70828347, -0.98725251,  0.28020231],
+       [-1.25898614,  1.05867731,  0.20430282],
+       [ 0.23715242,  0.0628872 , -0.30324894]]))) @ (((X_0) * (array([[ 0.4609263 ,  1.10732082, -1.64235896],
+       [-5.78728213, -1.14002744, -7.41592524],
+       [ 3.98790411,  2.2067136 ,  5.84326082]])) + array([[-0.03862302, -0.03187797,  0.20941924],
+       [ 0.88568078,  0.49687034,  1.68504125],
+       [-0.27601273, -0.15597089, -0.63898822]])) @ (array([[ 0.70828347, -0.98725251,  0.28020231],
+       [-1.25898614,  1.05867731,  0.20430282],
+       [ 0.23715242,  0.0628872 , -0.30324894]]))))
+    #eq *= (100 + 1050*eps)
+    # eq = align_axes_with_pi_plane_rot().T @ eq @ align_axes_with_pi_plane_rot()
+    # eq[:, 2] = 0
+    # eq[2, :] = 0
+    # eq[2, 2] = 1
+    # eq = align_axes_with_pi_plane_rot() @ eq @ align_axes_with_pi_plane_rot().T
 
-    scaling_factor = .5
+    scaling_factor = 100
     # set scaling factor if needed (e.g., if average scale is too large)
     eq *= scaling_factor
 
     if eq.shape[0] != eps.shape[0]:
         eq = np.repeat(eq[None, :, :], eps.shape[0], axis=0)
 
-    eq = np.eye(3)*scaling_factor
 
     return eq
 
@@ -400,9 +420,10 @@ def plot_mapping(formatted_data_path, mapping_model,
 
 
 if __name__ == "__main__":
-    # plot vspc mapped points
-    print("plotting vpsc results:")
+    # # plot vspc mapped points
+    # print("plotting vpsc results:")
     vpsc_data_path = "../data/processed_data/in625_0_bingo_format.txt"
+    vpsc_data_path = "../data/processed_data/vpsc_75_bingo_format.txt"
     plot_mapping(vpsc_data_path, vpsc_75_mapping_model, [-600, 600],
                  plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
                  drawn_axes_length=550, drawn_axes_scale=100)
@@ -422,14 +443,15 @@ if __name__ == "__main__":
     # print()
     
     # # plot vpsc mapped yield surface
-    # plot_mapping(vpsc_data_path, vpsc_57_mapping_model, [-600, 600],
-    #              plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
-    #              drawn_axes_length=550, drawn_axes_scale=100)
-    # print()
+    # vpsc_data_path = "../data/processed_data/vpsc_75_bingo_format.txt"
+    # # plot_mapping(vpsc_data_path, vpsc_75_mapping_model, [-600, 600],
+    # #              plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
+    # #              drawn_axes_length=550, drawn_axes_scale=100)
+    # # print()
 
-    # plot vpsc mapped yield surface
+    # # #plot vpsc mapped yield surface
     # plot_mapping(vpsc_data_path, vpsc_75_mapping_model, [-600, 600],
-    #              plot_original_points=True, plot_mapped_points=False, plot_yield_surfaces=True,
+    #              plot_original_points=True, plot_mapped_points=True, plot_yield_surfaces=False,
     #              drawn_axes_length=550, drawn_axes_scale=100)
     # print()
 

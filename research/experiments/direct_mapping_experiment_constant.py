@@ -201,7 +201,7 @@ def run_experiment(dataset_path,
     local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1], options={"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12})
     #local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1])
     # downscale CPU_COUNT to avoid resource conflicts
-    N_CPUS_TO_USE = floor(CPU_COUNT * 0.9)
+    N_CPUS_TO_USE = CPU_COUNT -1
     print(f"using {N_CPUS_TO_USE}/{CPU_COUNT} cpus")
     evaluator = Evaluation(local_opt_fitness, multiprocess=N_CPUS_TO_USE)
 
@@ -287,7 +287,7 @@ if __name__ == '__main__':
                     checkpoint_path=vm_checkpoint_path)
 
     if "VPSC75" in tests_to_run:
-        vpsc_checkpoint_path = "checkpoints/vpsc75"
+        vpsc_checkpoint_path = "checkpoints/vpsc75_constant"
         if not os.path.exists(vpsc_checkpoint_path):
             os.makedirs(vpsc_checkpoint_path)
 
@@ -296,7 +296,7 @@ if __name__ == '__main__':
         vpsc_transposed_data_path = "../data/processed_data/vpsc_75_transpose_bingo_format.txt"
         run_experiment(vpsc_data_path,
                     vpsc_transposed_data_path,
-                    max_generations=500,
+                    max_generations=300,
                     checkpoint_path=vpsc_checkpoint_path)
 
     if "david_Hill" in tests_to_run:
