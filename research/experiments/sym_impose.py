@@ -119,14 +119,35 @@ class ParentFitnessToChildFitness(VectorBasedFunction):
         # evaluate the child individual on the state parameter to get the mapping matrices
 
         mapping_matrices = individual.evaluate_equation_at([self.fitness_fn.training_data.x[1]])
-        
+
+
 
         P_mapped = mapping_matrices.transpose((0, 2, 1)) @ self.P_desired.detach().numpy() @ mapping_matrices
 
+        # First, check the matrix for 
+
         # normalize against the plane solution by using inverse of coefficient of variation
-        normalization_fitness = 2 * np.mean(P_mapped, axis=(1, 2)) / np.std(P_mapped + P_mapped.transpose((0, 2, 1)), axis=(1, 2))
+        P_sym = np.array([P_mapped[..., 0, 0], P_mapped[..., 1, 1], P_mapped[..., 2, 2], P_mapped[..., 1, 2], P_mapped[..., 0, 2], P_mapped[..., 0, 1]]).T
+        P_sym = np.squeeze(P_sym)
+        normalization_fitness = 2 * np.mean(P_sym, axis=1) / np.std(P_sym, axis=1)
         
         fitness = self.fitness_fn.evaluate_fitness_vector(parent_agraph)
+
+        # Granular matricies
+        # Check 20 times the values between the strain values
+        #x_gran = torch.from_numpy(np.linspace( self.fitness_fn.training_data.x[1][0], self.fitness_fn.training_data.x[1][-1], len(self.fitness_fn.training_data.x[1])*20 ))
+        #granular_matrices = individual.evaluate_equation_at([x_gran])
+        if not np.allclose( mapping_matrices, mapping_matrices.transpose((0, 2, 1))): # must be a symmetric
+            fitness *=  np.nan
+            normalization_fitness *= np.nan
+            return np.hstack((fitness, normalization_fitness))
+        try:
+            granular_matrices = mapping_matrices + np.eye(mapping_matrices.shape[1]) * 1e-16
+            np.linalg.cholesky(granular_matrices)
+        except np.linalg.LinAlgError:
+            fitness *= np.inf
+            normalization_fitness *= np.inf
+            #return np.hstack((fitness, normalization_fitness))
 
         return np.hstack((fitness, normalization_fitness))
 
@@ -245,6 +266,7 @@ def run_experiment(dataset_path,
     print('best individual=',island.get_best_individual())
 
     f.close()
+    
 
 
 if __name__ == '__main__':
@@ -270,5 +292,5 @@ if __name__ == '__main__':
     hill_transposed_data_path = "../data/processed_data/hill_w_hardening_transpose.txt"
     run_experiment(hill_data_path,
                    hill_transposed_data_path,
-                   max_generations=2,
+                   max_generations=150,
                    checkpoint_path=hill_checkpoint_path)
