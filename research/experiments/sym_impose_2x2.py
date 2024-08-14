@@ -5,6 +5,8 @@ import numpy as np
 import torch
 torch.set_num_threads(1)
 
+import argparse
+
 import multiprocessing
 CPU_COUNT = multiprocessing.cpu_count()
 
@@ -127,14 +129,14 @@ class ParentFitnessToChildFitness(VectorBasedFunction):
         # First, check the matrix for 
 
         # normalize against the plane solution by using inverse of coefficient of variation
-        P_sym = np.array([P_mapped[..., 0, 0], P_mapped[..., 1, 1], P_mapped[..., 2, 2], P_mapped[..., 1, 2], P_mapped[..., 0, 2], P_mapped[..., 0, 1]]).T
+        P_sym = np.array([P_mapped[..., 0, 0], P_mapped[..., 1, 1], P_mapped[..., 0, 1]]).T
         P_sym = np.squeeze(P_sym)
         normalization_fitness = 2 * np.mean(P_sym, axis=1) / np.std(P_sym, axis=1)
         
         fitness = self.fitness_fn.evaluate_fitness_vector(parent_agraph)
 
         # Granular matricies
-        # Check 20 times the values between the strain values
+        # Check 2 times the values between the strain values
         x_gran = torch.from_numpy(np.linspace( self.fitness_fn.training_data.x[1][0], self.fitness_fn.training_data.x[1][-1], len(self.fitness_fn.training_data.x[1])*2 ))
         granular_matrices = individual.evaluate_equation_at([x_gran])
         if not np.allclose( mapping_matrices, mapping_matrices.transpose((0, 2, 1))): # must be a symmetric
@@ -148,6 +150,12 @@ class ParentFitnessToChildFitness(VectorBasedFunction):
             fitness *= np.inf
             normalization_fitness *= np.inf
             #return np.hstack((fitness, normalization_fitness))
+
+        for II, P in enumerate(P_mapped):
+            if np.isnan(np.linalg.norm(P)):
+                fitness *= np.inf
+                normalization_fitness *= np.inf
+
 
         return np.hstack((fitness, normalization_fitness))
 
@@ -173,18 +181,59 @@ class DoubleFitness(VectorBasedFunction):
 
         return total_fitness
 
+def align_pi_plane_with_axes_rot():
+    """
+    Returns a matrix that rotates the pi plane's normal to be the z axis
+    i.e., a slice of pi plane becomes the xy plane after rotation
+    """
+    pi_vector = np.array([1, 1, 1]) / np.sqrt(3.)
+    # wanted_vector = np.array([1, 0, 0])
+    wanted_vector = np.array([0, 0, 1])
+    wanted_vector = wanted_vector / np.linalg.norm(wanted_vector)
+    added = (pi_vector + wanted_vector).reshape([-1, 1])
+    # from Rodrigues' rotation formula, more info here: https://math.stackexchange.com/a/2672702
+    rot_mat = 2 * (added @ added.T) / (added.T @ added) - np.eye(3)
+    return rot_mat
 
-def run_experiment(dataset_path,
+def remove_hydrostatic_dependence(data, transpose_data):
+    # Get the rotation matrix with full precision
+    d = align_pi_plane_with_axes_rot()
+
+    # Isolate stress
+    stress_vectors = data[:,0:3]
+    stress_vectors_T = transpose_data[:, 0:3]
+
+    # Shift the X_0 up a tiny bit
+    data[:,3] += 1.0
+    transpose_data[:,3] += 1
+
+    # Rotate to pi plane
+    stress_vectors = (d @ stress_vectors.T).T
+    stress_vectors_T = (d @ stress_vectors_T.T).T
+    #print(np.shape(stress_vectors_T), np.shape(transpose_data[:,3].T))
+
+    # Remove hydrostatic stress, add X_0 back in
+    data = np.column_stack([stress_vectors[:,0:2], data[:,3].T ])
+    transpose_data = np.column_stack( [stress_vectors_T[:, 0:2], transpose_data[:,3].T ])
+
+    return data, transpose_data
+
+
+def run_deviatoric_experiment(dataset_path,
                    transposed_dataset_path,
                    max_generations=100,
                    checkpoint_path="checkpoints"):
+    
     # load data
-    data = np.loadtxt(dataset_path)
-    transposed_data = np.loadtxt(transposed_dataset_path)
+    data_pre = np.loadtxt(dataset_path)
+    transposed_data_pre = np.loadtxt(transposed_dataset_path)
     print("running w/ dataset:", dataset_path)
 
+    data, transposed_data = remove_hydrostatic_dependence(data_pre, transposed_data_pre)
+    #print(data, transposed_data)
+
     state_param_dims = [(1, 1)]
-    output_dim = (3, 3)
+    output_dim = (2, 2)
 
     # get local derivatives from data
     x, dx_dt, _ = _calculate_partials(data, window_size=5)
@@ -198,24 +247,24 @@ def run_experiment(dataset_path,
     implicit_training_data = ImplicitTrainingDataMD(x, dx_dt)
 
     # convert numpy arrays into pytorch tensors
-    x_0 = torch.from_numpy(implicit_training_data._x[:, :3].reshape((-1, 3, 1))).double()
-    x_1 = torch.from_numpy(implicit_training_data._x[:, 3].reshape((-1,1,1))).double()
+    x_0 = torch.from_numpy(implicit_training_data._x[:, :2].reshape((-1, 2, 1))).double()
+    x_1 = torch.from_numpy(implicit_training_data._x[:, 2].reshape((-1,1,1))).double()
     x = [x_0, x_1]
-    print('x_0=',x_0[0])
-    #print('x_1=',x_1)
-    raise Exception('stop here')
+    # print('x_0=',x_0[0])
+    # #print('x_1=',x_1)
     implicit_training_data._x = x
-    implicit_fitness = ImplicitRegressionMD(implicit_training_data, required_params=4)
+    implicit_fitness = ImplicitRegressionMD(implicit_training_data) #, required_params=2)
 
     # explicit fitness function to make yield stress constant per yield surface
     y = np.ones((x_0.size(0), 1, 1))
     explicit_training_data = ExplicitTrainingDataMD(x, y)
     explicit_fitness = ExplicitRegressionMD(explicit_training_data)
 
-    P_vm = np.array([[1, -0.5, -0.5],
-                     [-0.5, 1, -0.5],
-                     [-0.5, -0.5, 1]])
-    P_vm = torch.from_numpy(P_vm).double()
+    P_vm_pi_plane = np.array([[1.5, 0.],
+                     [0., 1.5 ]]) #(d @ P_vm_stress_basis @ d)[:2, :2]
+
+    print(P_vm_pi_plane)
+    P_vm = torch.from_numpy(P_vm_pi_plane).double()
 
     # convert fitness functions to child fitness functions
     parent_explicit = ParentFitnessToChildFitness(fitness_for_parent=explicit_fitness, P_desired=P_vm)
@@ -233,7 +282,7 @@ def run_experiment(dataset_path,
     evaluator = Evaluation(local_opt_fitness, multiprocess=N_CPUS_TO_USE)
 
     # setup archipelago
-    component_generator = ComponentGeneratorMD(state_param_dims, possible_dims=[(3, 3), (1, 1)])
+    component_generator = ComponentGeneratorMD(state_param_dims, possible_dims=[(2, 2), (1, 1)])
     component_generator.add_operator("+")
     component_generator.add_operator("*")
     component_generator.add_operator("/")
@@ -271,27 +320,22 @@ def run_experiment(dataset_path,
 
 
 if __name__ == '__main__':
-    # make checkpoint folders if they don't exist
-    # vpsc_checkpoint_path = "checkpoints/vpsc"
-    # if not os.path.exists(vpsc_checkpoint_path):
-    #     os.makedirs(vpsc_checkpoint_path)
 
-    hill_checkpoint_path = "checkpoints/hill"
-    if not os.path.exists(hill_checkpoint_path):
-        os.makedirs(hill_checkpoint_path)
+    problems_to_run = [
+        'hill'
+    ]
+    
 
-    # run vpsc experiment
-    # vpsc_data_path = "vpsc_57_bingo_format.txt"
-    # vpsc_transposed_data_path = "vpsc_57_transpose_bingo_format.txt"
-    # run_experiment(vpsc_data_path,
-    #                vpsc_transposed_data_path,
-    #                max_generations=500,
-    #                checkpoint_path=vpsc_checkpoint_path)
+    if 'hill' in problems_to_run:
+        hill_checkpoint_path = "checkpoints/hill_2d"
+        if not os.path.exists(hill_checkpoint_path):
+            os.makedirs(hill_checkpoint_path)
 
-    #run hill experiment
-    hill_data_path = "../data/processed_data/hill_w_hardening.txt"
-    hill_transposed_data_path = "../data/processed_data/hill_w_hardening_transpose.txt"
-    run_experiment(hill_data_path,
-                   hill_transposed_data_path,
-                   max_generations=1000,
-                   checkpoint_path=hill_checkpoint_path)
+        #run hill experiment
+        hill_data_path = "../data/processed_data/hill_w_hardening.txt"
+        hill_transposed_data_path = "../data/processed_data/hill_w_hardening_transpose.txt"
+
+        run_deviatoric_experiment(hill_data_path,
+                    hill_transposed_data_path,
+                    max_generations=2000,
+                    checkpoint_path=hill_checkpoint_path)
