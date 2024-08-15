@@ -69,6 +69,10 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
     ----------
     use_simplification : bool, optional
         Whether to use cas-simplification or not.
+    use_symmetric_constants: bool, optional
+        Impose symmetry in the output matrices
+    zeros : array of bool or None, optional
+        If not None, elements in array that are True should be zero in the output array
 
     Attributes
     ----------
@@ -82,7 +86,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         numeric constants that are used in the equation
     """
     def __init__(self, input_dims, output_dim, use_simplification=False,
-                 use_symmetric_constants=False):
+                 use_symmetric_constants=False, zeros=None):
         super().__init__()
 
         self.input_dims = [input_dim if input_dim != () else (0, 0) for input_dim in input_dims]
@@ -90,6 +94,17 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
 
         self._use_simplification = use_simplification
         self._use_symmetric_constants = use_symmetric_constants
+        self._impose_zeros = zeros
+        if self._use_symmetric_constants == False and self._impose_zeros is not None:
+            raise NotImplementedError('Imposing zeros is currently only implemented for symmetric constants.')
+        else:
+            if np.allclose(zeros, zeros.T, rtol=1e-32, atol=1e-32) == False:
+                raise AssertionError('Imposing zeros is currently only implemented for symmetric constants. The zeros boolean array must be symmetric.')
+        if self._impose_zeros is not None:
+            cond = output_dim[0] != self._impose_zeros.shape[0]
+            cond *= output_dim[1] != self._impose_zeros.shape[1]
+            if cond == False:
+                raise IndexError('Zeros array must be same size as output dimensions.')
 
         self._command_array = np.empty([0, 4], dtype=int)
         self._constants = []
@@ -227,6 +242,12 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
                     # for vector and scalar cases
                     if any([shape_component == 1 for shape_component in constant.shape]):
                         num_params += max(constant.shape)
+                    elif self._impose_zeros is not None:
+                        upper_triangle_index = np.triu_indices(constant.shape[0])
+                        upper_triangle_elements = self._impose_zeros[upper_triangle_index]
+                        number_of_upper_triangle_elements = len(upper_triangle_elements)
+                        number_of_zero_parameters = np.sum(upper_triangle_elements)
+                        num_params += number_of_upper_triangle_elements - number_of_zero_parameters
                     else:
                         if constant.ndim == 2:
                             if constant.shape[0] == constant.shape[1]:
@@ -272,7 +293,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
             self._needs_opt = False
 
     @staticmethod
-    def _get_symmetric_matrix(upper_triangular_section, shape):
+    def _get_symmetric_matrix(upper_triangular_section, shape, imposed_zeros):
         is_scalar_or_vector = any([shape_component == 1 for shape_component in shape]) or len(shape) <= 1
         if not is_scalar_or_vector:
             if shape[0] != shape[1]:
@@ -280,6 +301,17 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
             sym_mat = np.zeros(shape)
             sym_mat[np.triu_indices(shape[0])] = upper_triangular_section
             sym_mat += sym_mat.T - np.diag(np.diag(sym_mat))
+
+            if imposed_zeros is not None:
+                # Here, we've passed in an imposed_zeros array where True indicates the array should be zero
+                # Instead, we should invert this array where False (i.e., 0) in the array should be zero
+                imposed_zeros_values = np.logical_not(imposed_zeros).astype(float)
+
+                # Perform ELEMENT-WISE multiplication (NOT dot product) on the symm mat before returning
+                # This will multiply the elements in sym_mat that should be zero by zero
+                sym_mat = np.multiply(imposed_zeros_values, sym_mat)
+                
+
             return sym_mat
         else:
             if shape == (1, 1):
@@ -300,12 +332,19 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
             else:
                 if shape[0] == shape[1]:
                     # get number of entries in upper triangular section
-                    len_const = sum([i for i in range(shape[0] + 1)])
+                    if self._impose_zeros is not None:
+                        upper_triangle_index = np.triu_indices(shape[0])
+                        upper_triangle_elements = self._impose_zeros[upper_triangle_index]
+                        number_of_upper_triangle_elements = len(upper_triangle_elements)
+                        number_of_zero_parameters = np.sum(upper_triangle_elements)
+                        len_const = number_of_upper_triangle_elements - number_of_zero_parameters
+                    else:
+                        len_const = sum([i for i in range(shape[0] + 1)])
                 else:
                     len_const = shape[0] * shape[1]
             next_i = prev_i + len_const
 
-            symmetric_constant = self._get_symmetric_matrix(flattened_upper_triangular[prev_i:next_i], shape)
+            symmetric_constant = self._get_symmetric_matrix(flattened_upper_triangular[prev_i:next_i], shape, self._impose_zeros)
             if is_vector:
                 symmetric_constant = symmetric_constant.reshape(shape)
             constants.append(symmetric_constant)
@@ -504,3 +543,4 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         agraph_duplicate._modified = self._modified
         agraph_duplicate._use_simplification = self._use_simplification
         agraph_duplicate._use_symmetric_constants = self._use_symmetric_constants
+        agraph_duplicate._impose_zeros = self._impose_zeros
