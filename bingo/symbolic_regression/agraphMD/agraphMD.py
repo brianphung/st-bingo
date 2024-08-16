@@ -97,12 +97,12 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
         self._impose_zeros = zeros
         if self._use_symmetric_constants == False and self._impose_zeros is not None:
             raise NotImplementedError('Imposing zeros is currently only implemented for symmetric constants.')
-        else:
+        elif self._use_symmetric_constants == True and self._impose_zeros is not None:
             if np.allclose(zeros, zeros.T, rtol=1e-32, atol=1e-32) == False:
                 raise AssertionError('Imposing zeros is currently only implemented for symmetric constants. The zeros boolean array must be symmetric.')
         if self._impose_zeros is not None:
-            cond = output_dim[0] != self._impose_zeros.shape[0]
-            cond *= output_dim[1] != self._impose_zeros.shape[1]
+            cond = output_dim[0] == self._impose_zeros.shape[0]
+            cond *= output_dim[1] == self._impose_zeros.shape[1]
             if cond == False:
                 raise IndexError('Zeros array must be same size as output dimensions.')
 
@@ -299,17 +299,25 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
             if shape[0] != shape[1]:
                 return upper_triangular_section.reshape(shape)
             sym_mat = np.zeros(shape)
-            sym_mat[np.triu_indices(shape[0])] = upper_triangular_section
+            if imposed_zeros is not None:
+                sym_mat = np.zeros(shape)
+                upper_indices = np.triu_indices(shape[0])
+                upper_zeros = imposed_zeros[upper_indices]
+                upper_sym = np.zeros(len(upper_zeros))
+                upper_sym[np.where(upper_zeros == False)] = upper_triangular_section
+                sym_mat[np.triu_indices(shape[0])] = upper_sym
+            else:
+                sym_mat[np.triu_indices(shape[0])] = upper_triangular_section
             sym_mat += sym_mat.T - np.diag(np.diag(sym_mat))
 
-            if imposed_zeros is not None:
-                # Here, we've passed in an imposed_zeros array where True indicates the array should be zero
-                # Instead, we should invert this array where False (i.e., 0) in the array should be zero
-                imposed_zeros_values = np.logical_not(imposed_zeros).astype(float)
+            # if imposed_zeros is not None:
+            #     # Here, we've passed in an imposed_zeros array where True indicates the array should be zero
+            #     # Instead, we should invert this array where False (i.e., 0) in the array should be zero
+            #     imposed_zeros_values = np.logical_not(imposed_zeros).astype(float)
 
-                # Perform ELEMENT-WISE multiplication (NOT dot product) on the symm mat before returning
-                # This will multiply the elements in sym_mat that should be zero by zero
-                sym_mat = np.multiply(imposed_zeros_values, sym_mat)
+            #     # Perform ELEMENT-WISE multiplication (NOT dot product) on the symm mat before returning
+            #     # This will multiply the elements in sym_mat that should be zero by zero
+            #     sym_mat = np.multiply(imposed_zeros_values, sym_mat)
                 
 
             return sym_mat
@@ -333,6 +341,7 @@ class AGraphMD(Equation, continuous_local_opt_md.ChromosomeInterfaceMD):
                 if shape[0] == shape[1]:
                     # get number of entries in upper triangular section
                     if self._impose_zeros is not None:
+                        #print('set symm constants shape', shape)
                         upper_triangle_index = np.triu_indices(shape[0])
                         upper_triangle_elements = self._impose_zeros[upper_triangle_index]
                         number_of_upper_triangle_elements = len(upper_triangle_elements)
