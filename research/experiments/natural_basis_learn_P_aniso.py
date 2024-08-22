@@ -4,7 +4,7 @@ import os
 import numpy as np
 import torch
 torch.set_num_threads(1)
-
+import sys
 import argparse
 
 import multiprocessing
@@ -284,10 +284,11 @@ def run_deviatoric_experiment(dataset_path,
 if __name__ == '__main__':
 
     problems_to_run = [
-        'transverse_iso'
+        'transverse_iso',
+        'hill48'
     ]
     
-
+    problems_to_run = problems_to_run[int(sys.argv[1])]
     if 'transverse_iso' in problems_to_run:
         hill_checkpoint_path = "checkpoints/transverse_iso_P_direct"
         if not os.path.exists(hill_checkpoint_path):
@@ -296,6 +297,20 @@ if __name__ == '__main__':
         #run hill experiment
         hill_data_path = "../data_6x6/processed_data/transverse_iso_6x6_bingo.csv"
         hill_transposed_data_path = "../data_6x6/processed_data/transverse_iso_6x6_bingo_transpose.csv"
+
+        run_deviatoric_experiment(hill_data_path,
+                    hill_transposed_data_path,
+                    max_generations=500,
+                    checkpoint_path=hill_checkpoint_path)
+        
+    if 'hill48' in problems_to_run:
+        hill_checkpoint_path = "checkpoints/hill_48_P_direct"
+        if not os.path.exists(hill_checkpoint_path):
+            os.makedirs(hill_checkpoint_path)
+
+        #run hill experiment
+        hill_data_path = "../data_6x6/processed_data/hill48_bingo.csv"
+        hill_transposed_data_path = "../data_6x6/processed_data/hill48_bingo_transpose.csv"
 
         run_deviatoric_experiment(hill_data_path,
                     hill_transposed_data_path,
