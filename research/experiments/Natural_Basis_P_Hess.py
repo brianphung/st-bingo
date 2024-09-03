@@ -279,10 +279,12 @@ def run_deviatoric_experiment(dataset_path,
 
 if __name__ == '__main__':
 
+    
     problems_to_run = [
-        'transverse_iso',
-        'hill48',
-        '1mm_polycrystal'
+        'transverse_iso', # 0
+        'hill48', # 1
+        '1mm_polycrystal', # 2
+        'vpsc_hcp' # 3
     ]
     
     problems_to_run = problems_to_run[int(sys.argv[1])]
@@ -327,3 +329,17 @@ if __name__ == '__main__':
                     data_path,
                     max_generations=5000,
                     checkpoint_path=hill_checkpoint_path)
+        
+
+    if 'vpsc_hcp' in problems_to_run:
+        vpsc_checkpoint_path = "checkpoints/vpsc_hcp"
+        if not os.path.exists(vpsc_checkpoint_path):
+            os.makedirs(vpsc_checkpoint_path)
+
+        #run hill experiment
+        data_path = "../data_6x6/processed_data/VPSC_HCP_BINGO.txt"
+
+        run_deviatoric_experiment(data_path,
+                    data_path,
+                    max_generations=5000,
+                    checkpoint_path=vpsc_checkpoint_path)
