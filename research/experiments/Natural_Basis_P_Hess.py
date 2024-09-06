@@ -234,7 +234,7 @@ def run_deviatoric_experiment(dataset_path,
     local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1], options={"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12, "maxiter": 10000})
 
     # downscale CPU_COUNT to avoid resource conflicts
-    N_CPUS_TO_USE = floor(CPU_COUNT * 0.9)
+    N_CPUS_TO_USE = CPU_COUNT #floor(CPU_COUNT * 0.9)
     print(f"using {N_CPUS_TO_USE}/{CPU_COUNT} cpus")
     evaluator = Evaluation(local_opt_fitness, multiprocess=N_CPUS_TO_USE)
 
@@ -264,8 +264,8 @@ def run_deviatoric_experiment(dataset_path,
     island.evolve(1)
     island.evolve_until_convergence(max_generations=max_generations,
                                     fitness_threshold=1e-5,
-                                    convergence_check_frequency=1,
-                                    num_checkpoints=3,
+                                    convergence_check_frequency=10,
+                                    num_checkpoints=None,
                                     checkpoint_base_name=f"{checkpoint_path}/checkpoint")
     f=open('output.txt','w')
     print("Finished bingo run, pareto front is:")
@@ -337,7 +337,7 @@ if __name__ == '__main__':
             os.makedirs(vpsc_checkpoint_path)
 
         #run hill experiment
-        data_path = "../data_6x6/processed_data/VPSC_HCP_BINGO.txt"
+        data_path = "../data_6x6/processed_data/VPSC_HCP_BINGO_shift.txt"
 
         run_deviatoric_experiment(data_path,
                     data_path,
