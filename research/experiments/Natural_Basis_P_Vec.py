@@ -160,8 +160,9 @@ class DoubleFitness(VectorBasedFunction):
         implicit = self.implicit_fitness.evaluate_fitness_vector(individual)
         explicit = self.explicit_fitness.evaluate_fitness_vector(individual)
         total_fitness = np.hstack((implicit, explicit))
-
-        return total_fitness
+        # Not entirely sure we need the implicit part to learn the vector solution -- plus, it may no longer be valid
+        return explicit #total_fitness
+    
 
 
 def remove_hydrostatic_dependence(data, transpose_data):
@@ -295,7 +296,7 @@ if __name__ == '__main__':
     
     problems_to_run = problems_to_run[int(sys.argv[1])]
 
-    checkpoint_P_sym = 'checkpoints/vpsc_hcp/checkpoint_3691.pkl'
+    checkpoint_P_sym = 'checkpoints/vpsc_hcp/checkpoint_4001.pkl'
     _ = open(checkpoint_P_sym, 'rb')
     hof = dill.load(_).hall_of_fame
     best_P = hof[0]
