@@ -25,8 +25,8 @@ from bingo.symbolic_regression.explicit_regression_md import ExplicitRegressionM
 from bingo.symbolic_regression.implicit_regression_md import ImplicitRegressionMD, ImplicitTrainingDataMD, \
     _calculate_partials
 
-POP_SIZE = 100
-STACK_SIZE = 10
+POP_SIZE = 300
+STACK_SIZE = 20
 sqrt2 = np.sqrt(2)
 sqrt3 = np.sqrt(3)
 upper_triangle_idx  =np.triu_indices(5)
@@ -325,7 +325,7 @@ if __name__ == '__main__':
         
 
     if 'vpsc_hcp' in problems_to_run:
-        vpsc_checkpoint_path = "checkpoints/vpsc_hcp_OPENSEASON"
+        vpsc_checkpoint_path = "checkpoints/vpsc_hcp_OPENSEASON_BIIIIIIG_Stack"
         if not os.path.exists(vpsc_checkpoint_path):
             os.makedirs(vpsc_checkpoint_path)
 
