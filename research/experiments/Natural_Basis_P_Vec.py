@@ -307,7 +307,7 @@ if __name__ == '__main__':
             os.makedirs(vpsc_checkpoint_path)
 
         #run hill experiment
-        data_path = "../data_6x6/processed_data/VPSC_HCP_BINGO_shift.txt"
+        data_path = "../data_6x6/processed_data/VPSC_HCP_BINGO.txt"
 
         run_deviatoric_experiment(data_path,
                     data_path,
