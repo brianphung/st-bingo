@@ -7,12 +7,9 @@ torch.set_num_threads(1)
 import sys
 import scipy
 
-from numpy import array
-
 import multiprocessing
 CPU_COUNT = multiprocessing.cpu_count()
-import dill
-import copy
+
 from bingo.evaluation.fitness_function import VectorBasedFunction
 from bingo.evolutionary_algorithms.age_fitness import AgeFitnessEA
 from bingo.evaluation.evaluation import Evaluation
@@ -28,8 +25,8 @@ from bingo.symbolic_regression.explicit_regression_md import ExplicitRegressionM
 from bingo.symbolic_regression.implicit_regression_md import ImplicitRegressionMD, ImplicitTrainingDataMD, \
     _calculate_partials
 
-POP_SIZE = 100
-STACK_SIZE = 10
+POP_SIZE = 300
+STACK_SIZE = 20
 sqrt2 = np.sqrt(2)
 sqrt3 = np.sqrt(3)
 upper_triangle_idx  =np.triu_indices(5)
@@ -48,11 +45,6 @@ d_inv = 1.0/np.sqrt(6) * np.array( [[ sqrt2, -1, -sqrt3, 0, 0, 0  ],
                                    [0, 0, 0, 0, sqrt3, 0],
                                    [0, 0, 0, 0, 0, sqrt3] ])
 
-# def P_tens_func(X_0):
-#     X_0 = X_0.detach().numpy()
-#     return 
-                                   
-
 class ParentAgraphIndv:
     """
     Parent agraph that takes in a mapping individual that returns mapping
@@ -62,22 +54,16 @@ class ParentAgraphIndv:
     Basically this takes mapping individual $f(\alpha)$ (where $\alpha$ are
     state parameters) and converts it to $f(\alpha).T @ P_desired @ f(\alpha)$
     """
-    def __init__(self, mapping_indv, P_ten):
+    def __init__(self, mapping_indv):
         self.mapping_indv = mapping_indv
-        self.P_ten = P_ten
 
     def evaluate_equation_at(self, x, detach=True):
-        #local_P = copy.deepcopy(best_P)
+        
         principal_stresses, state_parameters = x
         # print('pricipal stresses=',principal_stresses)
-        P_vec = self.mapping_indv.evaluate_equation_at_no_detach([state_parameters])
-        P_ten = torch.from_numpy(self.P_ten.evaluate_equation_at([state_parameters]))
-        
-        yield_stresses = torch.transpose(principal_stresses, 1, 2) @ P_ten @ principal_stresses
-        # print(principal_stresses)
-        # print(P_vec)
-        yield_stresses += torch.transpose(principal_stresses, 1, 2) @ P_vec 
-        #del local_P
+        P_mapped = self.mapping_indv.evaluate_equation_at_no_detach([state_parameters])
+        yield_stresses = torch.transpose(principal_stresses, 1, 2) @ P_mapped @ principal_stresses
+
         if detach:
             return yield_stresses.detach().numpy()
         else:
@@ -115,32 +101,31 @@ class ParentFitnessToChildFitness(VectorBasedFunction):
     function for its child by converting the child to a parent agraph
     before evaluating it on the provided fitness function for the parent.
     """
-    def __init__(self, *, fitness_for_parent, P_ten):
+    def __init__(self, *, fitness_for_parent):
         super().__init__(metric="mse")
         self.fitness_fn = fitness_for_parent
-        self.P_ten =  P_ten 
 
     def evaluate_fitness_vector(self, individual):
-        parent_agraph = ParentAgraphIndv(individual, self.P_ten)
+        parent_agraph = ParentAgraphIndv(individual)
 
         # Evaluate the fitness the explicit yield points
         fitness = self.fitness_fn.evaluate_fitness_vector(parent_agraph)
 
-        # eqps_max = np.amax(self.fitness_fn.training_data.x[1].detach().numpy())
-        # number_of_granular_points = len(self.fitness_fn.training_data.x[1]) # This isn't actually the number of eqps points, it's number of input points TOTAL 
+        eqps_max = np.amax(self.fitness_fn.training_data.x[1].detach().numpy())
+        number_of_granular_points = len(self.fitness_fn.training_data.x[1]) # This isn't actually the number of eqps points, it's number of input points TOTAL 
 
-        # x_gran = np.linspace(0, eqps_max,  number_of_granular_points)
+        x_gran = np.linspace(0, eqps_max,  number_of_granular_points)
 
-        # # evaluate the child individual on the granular eqps to get the mapping matrices
-        # P_mapped_dev = individual.evaluate_equation_at(np.array([x_gran]))
-        # P_template = np.zeros((6,6))
-        # for P_candidate_dev in P_mapped_dev:
-        #     P_template[1:, 1:] = P_candidate_dev
-        #     P_candidate = d_trans.T @ P_template @ d_trans
-        #     _, info = scipy.linalg.lapack.dpotrf(P_candidate + np.eye(P_candidate.shape[1]) * 1e-16)
-        #     if info != 0:
-        #         fitness *= np.inf
-        #         return fitness
+        # evaluate the child individual on the granular eqps to get the mapping matrices
+        P_mapped_dev = individual.evaluate_equation_at(np.array([x_gran]))
+        P_template = np.zeros((6,6))
+        for P_candidate_dev in P_mapped_dev:
+            P_template[1:, 1:] = P_candidate_dev
+            P_candidate = d_trans.T @ P_template @ d_trans
+            _, info = scipy.linalg.lapack.dpotrf(P_candidate + np.eye(P_candidate.shape[1]) * 1e-16)
+            if info != 0:
+                fitness *= np.inf
+                return fitness
 
         return fitness #np.hstack((fitness, normalization_fitness))
 
@@ -160,9 +145,8 @@ class DoubleFitness(VectorBasedFunction):
         implicit = self.implicit_fitness.evaluate_fitness_vector(individual)
         explicit = self.explicit_fitness.evaluate_fitness_vector(individual)
         total_fitness = np.hstack((implicit, explicit))
-        # Not entirely sure we need the implicit part to learn the vector solution -- plus, it may no longer be valid
-        return explicit #total_fitness
-    
+
+        return total_fitness
 
 
 def remove_hydrostatic_dependence(data, transpose_data):
@@ -190,20 +174,21 @@ def remove_hydrostatic_dependence(data, transpose_data):
 
 def run_deviatoric_experiment(dataset_path,
                    transposed_dataset_path,
-                   P_ten,
+                   processors,
                    max_generations=100,
-                   checkpoint_path="checkpoints",
+                   checkpoint_path="checkpoints"
                    ):
+    
     # load data
     data_pre = np.loadtxt(dataset_path)
     transposed_data_pre = np.loadtxt(transposed_dataset_path)
     print("running w/ dataset:", dataset_path)
 
-    data, _ = remove_hydrostatic_dependence(data_pre, transposed_data_pre)
+    data, transposed_data = remove_hydrostatic_dependence(data_pre, transposed_data_pre)
     #print(data, transposed_data)
 
     state_param_dims = [(1, 1)]
-    output_dim = (5, 1)
+    output_dim = (5, 5)
     #print(transposed_data)
 
     # get local derivatives from data
@@ -223,31 +208,34 @@ def run_deviatoric_experiment(dataset_path,
     implicit_training_data._x = x
     implicit_fitness = ImplicitRegressionMD(implicit_training_data) #, required_params=2)
 
-    # Avoid pickling error, evalulate P_ten out here for all X_1
-    
-
     # explicit fitness function to make yield stress constant per yield surface
     y = np.ones((x_0.size(0), 1, 1))
     explicit_training_data = ExplicitTrainingDataMD(x, y)
     explicit_fitness = ExplicitRegressionMD(explicit_training_data)
 
+    # P_vm_nat = 3./2.*np.eye(5)
+
+    # P_vm = torch.from_numpy(P_vm_nat).double()
+
+
+
     # convert fitness functions to child fitness functions
-    parent_explicit = ParentFitnessToChildFitness(fitness_for_parent=explicit_fitness, P_ten = P_ten)
-    parent_implicit = ParentFitnessToChildFitness(fitness_for_parent=implicit_fitness, P_ten = P_ten)
+    parent_explicit = ParentFitnessToChildFitness(fitness_for_parent=explicit_fitness)
+    parent_implicit = ParentFitnessToChildFitness(fitness_for_parent=implicit_fitness)
 
     # combine implicit and explicit fitness functions
     yield_surface_fitness = DoubleFitness(implicit_fitness=parent_implicit, explicit_fitness=parent_explicit)
 
-    # local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1])
-    local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1], options={"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12, "maxiter": 10000})
+    local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1])
+    #local_opt_fitness = ContinuousLocalOptimizationMD(yield_surface_fitness, algorithm="lm", param_init_bounds=[-1, 1], options={"ftol": 1e-12, "xtol": 1e-12, "gtol": 1e-12, "maxiter": 10000})
 
     # downscale CPU_COUNT to avoid resource conflicts
-    N_CPUS_TO_USE = CPU_COUNT #floor(CPU_COUNT * 0.9)
+    N_CPUS_TO_USE = processors
     print(f"using {N_CPUS_TO_USE}/{CPU_COUNT} cpus")
     evaluator = Evaluation(local_opt_fitness, multiprocess=N_CPUS_TO_USE)
 
     # setup archipelago
-    component_generator = ComponentGeneratorMD(state_param_dims, possible_dims=[(5, 1), (1, 1)])
+    component_generator = ComponentGeneratorMD(state_param_dims, possible_dims=[(5, 5), (1, 1)])
     component_generator.add_operator("+")
     component_generator.add_operator("*")
     component_generator.add_operator("/")
@@ -255,7 +243,7 @@ def run_deviatoric_experiment(dataset_path,
     crossover = AGraphCrossoverMD()
     mutation = AGraphMutationMD(component_generator)
     agraph_generator = AGraphGeneratorMD(STACK_SIZE, component_generator, state_param_dims, output_dim,
-                                         use_simplification=False, use_pytorch=True)
+                                         use_simplification=False, use_pytorch=True, use_symmetric_constants=True)
 
     ea = AgeFitnessEA(evaluator, agraph_generator, crossover, mutation, 0.3, 0.6, POP_SIZE)
 
@@ -286,32 +274,18 @@ def run_deviatoric_experiment(dataset_path,
 
 if __name__ == '__main__':
 
-    
-    problems_to_run = [
-        None, # 0
-        None, # 1
-        None, # 2
-        'vpsc_hcp' # 3
-    ]
-    
-    problems_to_run = problems_to_run[int(sys.argv[1])]
+    processors = int(sys.argv[1])
+    shotgun_number = int(sys.argv[2])
 
-    checkpoint_P_sym = 'checkpoints/vpsc_hcp/checkpoint_4001.pkl'
-    _ = open(checkpoint_P_sym, 'rb')
-    hof = dill.load(_).hall_of_fame
-    best_P = hof[0]
-    
+    vpsc_checkpoint_path = f"checkpoints/vpsc_hcp_OPENSEASON_BIIIIIIG_Stack_{shotgun_number}"
+    if not os.path.exists(vpsc_checkpoint_path):
+        os.makedirs(vpsc_checkpoint_path)
 
-    if 'vpsc_hcp' in problems_to_run:
-        vpsc_checkpoint_path = "checkpoints/vpsc_hcp_vec"
-        if not os.path.exists(vpsc_checkpoint_path):
-            os.makedirs(vpsc_checkpoint_path)
+    #run hill experiment
+    data_path = "/uufs/chpc.utah.edu/common/home/u0674703/scv/bingo_shotgun_vpsc/st-bingo/research/data_6x6/processed_data/VPSC_HCP_BINGO_shift.txt"
 
-        #run hill experiment
-        data_path = "../data_6x6/processed_data/VPSC_HCP_BINGO.txt"
-
-        run_deviatoric_experiment(data_path,
-                    data_path,
-                    max_generations=5000,
-                    checkpoint_path=vpsc_checkpoint_path,
-                    P_ten = best_P)
+    run_deviatoric_experiment(data_path,
+                data_path,
+                max_generations=5000,
+                checkpoint_path=vpsc_checkpoint_path,
+                processors=processors)
